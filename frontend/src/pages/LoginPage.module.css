@@ -1,0 +1,331 @@
+.page {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--surface-1);
+  flex-direction: row;
+}
+
+.left,
+.right {
+  flex: 1;
+  background-color: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.left {
+  animation: slideDown 0.8s ease-out forwards;
+}
+
+.right {
+  animation: slideUp 0.8s ease-out forwards;
+}
+
+.brandGroup {
+  text-align: center;
+}
+
+.logo {
+  width: 150px;
+  height: auto;
+  margin-bottom: 16px;
+}
+
+.brandName {
+  color: var(--text-primary);
+  font-size: 32px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.tagline {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.form {
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.formTitle {
+  color: var(--text-primary);
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+
+.error{
+  color: var(--err-msg);
+}
+
+.input {
+  width: 100%;
+  background-color: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  padding-right: 64px;
+  color: var(--text-primary);
+}
+
+.input::placeholder {
+  color: var(--text-secondary);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--text-primary);
+}
+
+.primaryButton {
+  background-color: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.primaryButton:hover {
+  background-color: var(--border);
+}
+
+.googleButton {
+  background-color: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.helperText {
+  color: var(--text-secondary);
+  font-size: 14px;
+  text-align: center;
+}
+
+.link {
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 6px 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background-color: var(--text-primary);
+  opacity: 0.2;
+}
+
+.verticalDivider {
+  width: 1px;
+  background-color: var(--border);
+}
+
+
+.copyright {
+  position: absolute;
+  bottom: 16px;
+  left: 24px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+
+.passwordWrapper {
+  position: relative;
+  width: 100%;
+}
+
+.passwordToggle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  padding: 0 14px;
+
+  background: transparent;
+  border: none;
+  border-left: 1px solid var(--border); /* optional */
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  visibility: hidden;
+  display: flex;
+  align-items: center;
+}
+
+.passwordToggle:hover {
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+.passwordToggle.visible {
+  visibility: visible;
+}
+
+.success{
+  color: var(--text-secondary);
+}
+
+
+
+/* ERRORS */
+
+.inputError {
+  border-color: var(--err-msg);
+}
+
+.fieldError {
+  color: var(--err-msg);
+  font-size: 12px;
+  margin-top: -6px;
+}
+
+
+
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+
+@keyframes slideDownMobile {
+  from {
+    transform: translateY(-24px);
+    /* opacity: 0; */
+  }
+  to {
+    transform: translateY(0);
+    /* opacity: 1; */
+  }
+}
+
+
+
+
+
+
+
+
+
+
+@media (max-width: 1024px) {
+  .page {
+    flex-direction: row;
+  }
+
+  .left,
+  .right {
+    padding: 24px;
+  }
+
+
+
+  .logo {
+    width: 120px;
+  }
+
+  .brandName {
+    font-size: 26px;
+  }
+
+  .tagline {
+    display: none;
+  }
+}
+
+
+
+@media (max-width: 640px) {
+  .page {
+    flex-direction: column;
+    
+  }
+
+  .left,
+  .right {
+    width: 100%;
+    padding: 24px 16px;
+    animation: none;
+    /* flex: unset; */
+    
+  }
+
+
+  .left {
+    padding-top: 24px;    /* reduce top space */
+    padding-bottom: 8px;  /* reduce bottom space */
+    flex: unset;
+  }
+
+  .right {
+    padding-top: 32px;
+    /* flex: unset; */
+  }
+
+  .verticalDivider {
+    display: none;
+  }
+
+
+  .logo {
+    width: 90px;
+  }
+
+  .brandName {
+    font-size: 22px;
+  }
+
+  .tagline {
+    display: none;
+  }
+
+  .page {
+    animation: slideDownMobile 0.6s ease-out forwards;
+  }
+}
+
+
+
+
+

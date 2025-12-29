@@ -1,0 +1,31 @@
+.preloader {
+  position: fixed;
+  inset: 0;
+  background-color: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.preloader-logo {
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.preloader-logo img {
+  width: 120px;
+  height: auto;
+  display: block;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.4;
+  }
+}

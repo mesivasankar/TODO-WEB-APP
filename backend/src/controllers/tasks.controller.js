@@ -1,4 +1,4 @@
-import { getTasksForList, createTaskInList, updateTaskForUser, reorderTasksInList, softDeleteTaskForUser, getTaskByIdForUser, restoreTaskForUser, getSubtasksForTask } from '../services/tasks.service.js';
+import { getTasksForList, createTaskInList, updateTaskForUser, reorderTasksInList, softDeleteTaskForUser, getTaskByIdForUser, restoreTaskForUser, getSubtasksForTask, getAllStarredTasksForUser  } from '../services/tasks.service.js';
 import { pool } from '../config/db.js';
 
 
@@ -266,6 +266,21 @@ export async function restoreTask(req, res, next) {
     return next(err);
   }
 }
+
+
+
+export async function getAllStarredTasks(req, res, next) {
+  try {
+    const userId = req.user.id;
+
+    const tasks = await getAllStarredTasksForUser(userId);
+
+    return res.json({ tasks: serializeTasks(tasks) });
+  } catch (err) {
+    next(err);
+  }
+}
+
 
 
 

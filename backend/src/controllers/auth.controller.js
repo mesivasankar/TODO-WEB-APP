@@ -3,6 +3,8 @@ import jwt from 'jsonwebtoken';
 import { pool } from '../config/db.js';
 import { env } from '../config/env.js';
 import axios from 'axios';
+import crypto from 'crypto';
+
 
 import {
   validateEmail,
@@ -237,10 +239,10 @@ export async function register(req, res, next) {
     console.log('Email verification token (DEV ONLY):', verificationToken.token);
 
 
-    const appBaseUrl =
-      process.env.APP_BASE_URL || `http://localhost:${process.env.PORT || 3000}`;
+    
+    const verificationUrl =
+  `${env.serverBaseUrl}/api/auth/verify-email?token=${verificationToken.token}`;
 
-    const verificationUrl = `${appBaseUrl}/api/auth/verify-email?token=${verificationToken.token}`;
 
 
     try {
@@ -268,6 +270,64 @@ export async function register(req, res, next) {
     next(err);
   }
 }
+
+
+
+export async function resendVerificationEmail(req, res, next) {
+  try {
+    // const { token } = req.body;
+    const token = req.body?.token;
+
+
+    if (!token) {
+      return res.status(400).json({ message: "Missing token" });
+    }
+
+   const result = await pool.query(
+  `
+  SELECT u.id AS user_id, u.email
+  FROM email_verification_tokens evt
+  JOIN users u ON u.id = evt.user_id
+  WHERE evt.token = $1
+  LIMIT 1
+  `,
+  [token]
+);
+
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ message: "Invalid token" });
+    }
+
+    const { user_id, email } = result.rows[0];
+
+    const newToken = crypto.randomBytes(32).toString("hex");
+
+    await pool.query(
+      `
+      INSERT INTO email_verification_tokens (user_id, token, expires_at)
+      VALUES ($1, $2, NOW() + INTERVAL '24 hours')
+      `,
+      [user_id, newToken]
+    );
+
+   const verificationUrl =
+  `${env.serverBaseUrl}/api/auth/verify-email?token=${newToken}`;
+
+
+    await sendVerificationEmail(email, verificationUrl);
+
+    return res.json({ message: "Verification email resent" });
+  } catch (err) {
+    next(err);
+  }
+
+  console.log("REQ BODY:", req.body);
+
+}
+
+
+
 
 
 export async function login(req, res, next) {
@@ -373,14 +433,17 @@ export function logout(req, res) {
 
 
 export async function verifyEmail(req, res, next) {
+
+  const clientUrl = env.clientUrl; 
+
   try {
 
     const { token } = req.query;
 
     if (!token) {
-      return res
-        .status(400)
-        .json({ message: 'Verification token is missing.' });
+          return res.redirect(
+        `${clientUrl}/verify-email/error?reason=invalid`
+      );  
     }
 
 
@@ -402,25 +465,35 @@ export async function verifyEmail(req, res, next) {
 
 
     if (result.rows.length === 0) {
-      return res.status(400).json({ message: 'Invalid verification token.' });
-    }
+  return res.redirect(
+    `${clientUrl}/verify-email/error?reason=invalid`
+  );
+}
+
 
     const record = result.rows[0];
 
-    if (record.used_at) {
-      return res.status(400).json({
-        message: 'Token already used. Email is already verified.',
-      });
+     if (record.used_at) {
+      return res.redirect(
+        `${clientUrl}/verify-email/error?reason=used&token=${token}`
+      );
     }
 
     const now = new Date();
     const expiresAt = new Date(record.expires_at);
 
-    if (expiresAt <= now) {
-      return res
-        .status(400)
-        .json({ message: 'Verification token has expired.' });
+    if (new Date(record.expires_at) <= new Date()) {
+      return res.redirect(
+        `${clientUrl}/verify-email/error?reason=expired&token=${token}`
+      );
     }
+
+     if (record.is_email_verified) {
+      return res.redirect(
+        `${clientUrl}/verify-email/error?reason=already-verified&token=${token}`
+      );
+    }
+
 
     await pool.query(
       `UPDATE users SET is_email_verified = TRUE WHERE id = $1`,

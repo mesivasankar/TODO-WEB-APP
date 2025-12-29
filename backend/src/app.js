@@ -2,28 +2,77 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
+import rateLimit from 'express-rate-limit';
 import { env } from './config/env.js';
+import { pool } from './config/db.js';
 import authRoutes from './routes/auth.routes.js';
 import taskListRoutes from './routes/tasklists.routes.js';
 import tasksRoutes from './routes/tasks.routes.js';
-
+import { errorHandler } from './middleware/error.middleware.js';
+import  googleLimiter  from './middleware/googleLimiter.middleware.js'
 
 const app = express();
 
-app.use(helmet());
-app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173', 
-  credentials: true,
-}));
-app.use(express.json()); 
-app.use(cookieParser());
 
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok' });
+const corsOptions = {
+  origin: env.clientUrl,
+  credentials: true,
+};
+
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, 
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,     
 });
 
 
-app.use('/api/auth', authRoutes);
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, 
+  max: 20,                  
+  message: {
+    message: 'Too many login or signup attempts from this IP, please try again later.',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use(helmet(
+  {
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  }));
+
+
+app.use(cors(corsOptions));
+
+app.use(express.json({ limit: '1mb' })); 
+app.use(cookieParser());
+
+
+app.use(express.json());
+
+
+app.get('/health', async (req, res, next) => {
+  try {
+    const dbResult = await pool.query('SELECT NOW()');
+    return res.json({
+      status: 'ok',
+      env: env.nodeEnv,
+      dbTime: dbResult.rows[0].now,
+    });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+app.use('/api', apiLimiter);
+
+
+app.use("/api/auth/google", googleLimiter);
+
+app.use('/api/auth',authLimiter, authRoutes);
 
 app.use('/api/lists', taskListRoutes);
 
@@ -40,5 +89,9 @@ app.use((err, req, res, next) => {
     message: err.message || 'Something went wrong',
   });
 });
+
+
+app.use(errorHandler);
+
 
 export default app;

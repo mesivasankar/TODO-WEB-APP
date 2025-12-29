@@ -379,3 +379,81 @@ export async function getSubtasksForTask(userId, parentTaskId) {
   const { rows } = await pool.query(query, values);
   return rows;
 }
+
+
+
+export async function getTasksForListByView(userId, listId, view = 'my') {
+  const baseParams = [userId, listId];
+
+  let whereExtra = 'AND deleted_at IS NULL';
+
+  if (view === 'my') {
+    whereExtra += ' AND is_completed = FALSE';
+  } else if (view === 'completed') {
+    whereExtra += ' AND is_completed = TRUE';
+  } else if (view === 'starred') {
+    whereExtra += ' AND is_starred = TRUE';
+  }
+
+  const { rows } = await pool.query(
+    `
+    SELECT
+      id,
+      user_id,
+      list_id,
+      parent_task_id,
+      title,
+      description,
+      is_completed,
+      is_starred,
+      due_date,
+      reminder_at,
+      sort_order,
+      deleted_at,
+      completed_at,
+      created_at,
+      updated_at
+    FROM tasks
+    WHERE user_id = $1
+      AND list_id = $2
+      ${whereExtra}
+    ORDER BY sort_order ASC, created_at ASC
+    `,
+    baseParams
+  );
+
+  return rows;
+}
+
+
+
+export async function getAllStarredTasksForUser(userId) {
+  const { rows } = await pool.query(
+    `
+    SELECT
+      id,
+      user_id,
+      list_id,
+      parent_task_id,
+      title,
+      description,
+      is_completed,
+      is_starred,
+      due_date,
+      reminder_at,
+      sort_order,
+      deleted_at,
+      completed_at,
+      created_at,
+      updated_at
+    FROM tasks
+    WHERE user_id = $1
+      AND deleted_at IS NULL
+      AND is_starred = TRUE
+    ORDER BY sort_order ASC, created_at ASC
+    `,
+    [userId]
+  );
+
+  return rows;
+}

@@ -1,8 +1,10 @@
 import express from 'express';
-import { getTasksInList, createTask, updateTask, sortTasksInList , deleteTask, getTask, restoreTask, getSubtasks  } from '../controllers/tasks.controller.js';
+import { getTasksInList, createTask, updateTask, sortTasksInList , deleteTask, getTask, restoreTask, getSubtasks, getAllStarredTasks   } from '../controllers/tasks.controller.js';
 import { requireAuth } from '../middleware/auth.middleware.js';
 
 const router = express.Router({ mergeParams: true });
+
+router.get('/starred', requireAuth, getAllStarredTasks);
 
 router.get('/', requireAuth, getTasksInList);
 

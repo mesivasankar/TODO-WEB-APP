@@ -1,0 +1,34 @@
+/* DEFAULT — DARK THEME */
+:root {
+  --bg: #0F0F0F;        /* app background */
+  --surface-1: #1A1A1A;/* main panels */
+  --surface-2: #202020;/* cards / inputs */
+  --border: #2A2A2A;   /* dividers */
+  --text-primary: #FFFFFF;
+  --text-secondary: #B3B3B3;
+  --err-msg: rgb(255, 0, 0);
+}
+
+/* LIGHT THEME */
+[data-theme="light"] {
+  --bg: #FFFFFF;
+  --surface-1: #F7F7F8;
+  --surface-2: #EDEDED;
+  --border: #DADADA;
+  --text-primary: #000000;
+  --text-secondary: #4D4D4D;
+  --err-msg: rgb(255, 0, 0);
+}
+
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
