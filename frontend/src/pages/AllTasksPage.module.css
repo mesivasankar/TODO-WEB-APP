@@ -1,0 +1,110 @@
+/* ================= WRAPPER ================= */
+.cardsWrapper {
+  height: 100%;
+  width: 100%;
+  padding: 24px 32px;
+  
+  display: flex;
+  /* Align to top so they don't stretch to full height */
+  align-items: flex-start;
+  gap: 20px; 
+  
+  /* Horizontal Scrolling setup */
+  overflow-x: auto;
+  overflow-y: hidden;
+  
+  /* Snap behavior */
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+
+  box-sizing: border-box;
+  scroll-padding-inline: 32px;
+}
+
+/* Scrollbar Styling - Matching App Theme */
+.cardsWrapper::-webkit-scrollbar {
+  height: 8px;
+}
+.cardsWrapper::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 0 32px; 
+}
+.cardsWrapper::-webkit-scrollbar-thumb {
+  background: var(--surface-3);
+  border-radius: 4px;
+}
+.cardsWrapper::-webkit-scrollbar-thumb:hover {
+  background: var(--border);
+}
+
+/* ================= CARD CONTAINER BASE ================= */
+.cardContainer {
+  /* 🔥 FIX: Changed from height: 100% to auto so it wraps content */
+  height: auto; 
+  max-height: 100%; /* Respect parent bounds */
+  
+  display: flex;
+  flex-direction: column;
+  scroll-snap-align: start;
+  box-sizing: border-box;
+}
+
+/* ================= LAYOUT MODES ================= */
+
+/* 1. SINGLE VIEW: Centered & Wide */
+.singleView {
+  justify-content: center;
+}
+.singleView .cardContainer {
+  width: 100%;
+  max-width: 600px;
+  flex: 0 0 auto; 
+}
+
+/* 2. SPLIT VIEW (2-4 Items): Evenly split width */
+.splitView {
+  justify-content: flex-start;
+}
+.splitView .cardContainer {
+  flex: 1 1 0px; 
+  min-width: 320px; 
+  max-width: 500px; /* Optional: Cap width so they don't get too wide */
+}
+
+/* 3. SCROLL VIEW (5+ Items): Fixed width */
+.scrollView {
+  justify-content: flex-start;
+}
+.scrollView .cardContainer {
+  flex: 0 0 340px; 
+  max-width: none;
+}
+
+/* ================= EMPTY STATE ================= */
+.emptyState {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease forwards;
+}
+
+.animation {
+  width: 260px;
+  max-width: 80%;
+  opacity: 0.8;
+}
+
+.text {
+  margin-top: 16px;
+  font-size: 15px;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

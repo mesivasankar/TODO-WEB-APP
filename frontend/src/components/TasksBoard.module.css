@@ -1,0 +1,28 @@
+.board {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* 🔥 THIS IS THE KEY */
+.scroller {
+  display: flex;
+  flex-direction: row; /* FORCE horizontal */
+  align-items: stretch;
+  gap: 24px;
+
+  padding: 32px;
+
+  overflow-x: auto;
+  overflow-y: hidden;
+
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+
+  white-space: nowrap; /* extra safety */
+}
+
+/* Hide scrollbar */
+.scroller::-webkit-scrollbar {
+  display: none;
+}

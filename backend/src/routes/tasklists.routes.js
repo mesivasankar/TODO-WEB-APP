@@ -1,5 +1,5 @@
 import express from 'express';
-import { getTaskLists, deleteTaskList, createTaskList, renameTaskList } from '../controllers/tasklists.controller.js';
+import { getTaskLists, deleteTaskList, createTaskList, renameTaskList, reorderTaskLists } from '../controllers/tasklists.controller.js';
 import { requireAuth } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
@@ -7,6 +7,9 @@ const router = express.Router();
 router.get('/', requireAuth, getTaskLists);
 
 router.post('/', requireAuth, createTaskList);
+
+// 🔥 NEW: Reorder Route (Must come before /:id)
+router.patch('/reorder', requireAuth, reorderTaskLists);
 
 router.patch('/:id', requireAuth, renameTaskList);
 

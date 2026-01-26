@@ -1,0 +1,68 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: grid;
+  place-items: center;
+  z-index: 100;
+}
+
+.modal {
+  background: var(--surface-1);
+  border-radius: 16px;
+  padding: 20px;
+  width: 320px;
+  border: 1px solid var(--border);
+
+  animation: pop 160ms ease;
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.title {
+  margin-bottom: 12px;
+  font-size: 16px;
+  color: var(--text-primary);
+}
+
+.input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.cancel {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.save {
+  background: var(--surface-3);
+  border: none;
+  color: var(--text-primary);
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+}

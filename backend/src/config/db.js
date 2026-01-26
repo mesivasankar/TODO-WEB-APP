@@ -3,11 +3,11 @@ import { env } from './env.js';
 
 const { Pool } = pkg;
 
+const isLocal = env.dbUrl.includes('localhost');
+
 export const pool = new Pool({
   connectionString: env.dbUrl,
-  ssl: {
-    rejectUnauthorized: false,
-  },
+  ssl: isLocal ? false : { rejectUnauthorized: false },
 });
 
 

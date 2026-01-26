@@ -1,9 +1,7 @@
-import React from 'react';
+import { useParams } from "react-router-dom";
+import ListTasksCard from "../components/ListTasksCard";
 
 export default function ListTasksPage() {
-  return (
-    <div>
-      <h1>Tasks for List</h1>
-    </div>
-  );
+  const { listId } = useParams();
+  return <ListTasksCard listId={listId} />;
 }

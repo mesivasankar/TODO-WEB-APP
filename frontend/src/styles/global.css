@@ -1,24 +1,39 @@
 /* DEFAULT — DARK THEME */
 :root {
-  --bg: #0F0F0F;        /* app background */
-  --surface-1: #1A1A1A;/* main panels */
-  --surface-2: #202020;/* cards / inputs */
-  --border: #2A2A2A;   /* dividers */
+  --bg: #0F0F0F;           /* app background */
+  --surface-1: #1A1A1A;   /* main panels */
+  --surface-2: #202020;   /* cards / inputs */
+  --surface-3: #262626;   /* hover / selected */
+  --surface-4: #3b3b3b;   /* hover / selected */
+  
+
+  --border: #2A2A2A;      /* dividers */
+
   --text-primary: #FFFFFF;
   --text-secondary: #B3B3B3;
+  --text-muted: #7A7A7A; 
+  --over-due: rgb(249, 113, 113); /* subtle info */
+
   --err-msg: rgb(255, 0, 0);
 }
 
-/* LIGHT THEME */
+
 [data-theme="light"] {
   --bg: #FFFFFF;
   --surface-1: #F7F7F8;
   --surface-2: #EDEDED;
+  --surface-3: #E2E2E2;   /* hover / selected */
+
   --border: #DADADA;
+
   --text-primary: #000000;
   --text-secondary: #4D4D4D;
+  --text-muted: #8A8A8A;  /* subtle info */
+  --over-due: rgb(249, 113, 113); /* subtle info */
+
   --err-msg: rgb(255, 0, 0);
 }
+
 
 
 * {

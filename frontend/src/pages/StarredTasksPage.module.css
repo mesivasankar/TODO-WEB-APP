@@ -1,0 +1,50 @@
+
+/* Wrapper to center the content */
+.pageContainer {
+  height: 100%;
+  width: 100%;
+  padding: 24px 32px;
+  
+  display: flex;
+  justify-content: center; /* Center horizontally */
+  align-items: flex-start;
+  
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* The actual card wrapper constrained to look like Single View */
+.cardsWrapper {
+  width: 100%;
+  max-width: 600px; /* 🔥 FIX: Matches AllTasksPage single view limit */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+
+
+.header {
+  padding: 24px 40px 0;
+  flex: 0 0 auto;
+}
+
+.header h1 {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+
+
+/* Scrollbar styling */
+.cardsWrapper::-webkit-scrollbar {
+  height: 8px;
+}
+.cardsWrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+.cardsWrapper::-webkit-scrollbar-thumb {
+  background: var(--surface-3);
+  border-radius: 4px;
+}

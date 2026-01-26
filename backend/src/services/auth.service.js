@@ -90,6 +90,7 @@ export async function authenticateUser(email, password) {
   return user;
 }
 
+const AUTH_JWT_EXPIRES_IN = '7d';
 
 export function signAuthToken(user) {
 
@@ -98,7 +99,7 @@ export function signAuthToken(user) {
   };
 
   const options = {
-    expiresIn: '30m',
+    expiresIn: AUTH_JWT_EXPIRES_IN,
   };
 
   return jwt.sign(payload, env.jwtSecret, options);

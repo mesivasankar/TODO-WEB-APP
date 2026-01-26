@@ -21,6 +21,11 @@ import {
 
 
 
+const AUTH_COOKIE_MAX_AGE = 1000 * 60 * 60 * 24 * 7; // 7 days
+const AUTH_JWT_EXPIRES_IN = '7d';
+
+
+
 export async function googleAuthStart(req, res, next) {
   try {
     const params = new URLSearchParams({
@@ -159,13 +164,14 @@ export async function googleAuthCallback(req, res, next) {
     const token = jwt.sign(
       { userId: user.id },
       env.jwtSecret,
-      { expiresIn: '30m' }
+      { expiresIn: 'AUTH_JWT_EXPIRES_IN' }
     );
 
     res.cookie('access_token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
+      maxAge: AUTH_COOKIE_MAX_AGE
     });
 
 
@@ -394,7 +400,8 @@ export async function login(req, res, next) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 30 * 60 * 1000,
+      maxAge: AUTH_COOKIE_MAX_AGE,
+      expiresIn: '7d'
     });
 
 

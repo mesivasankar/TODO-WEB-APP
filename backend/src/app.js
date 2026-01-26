@@ -31,7 +31,8 @@ const apiLimiter = rateLimit({
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, 
-  max: 20,                  
+  // max: 20,    
+  max: env.isProduction ? 20 : 1000,              
   message: {
     message: 'Too many login or signup attempts from this IP, please try again later.',
   },
@@ -67,12 +68,21 @@ app.get('/health', async (req, res, next) => {
   }
 });
 
-app.use('/api', apiLimiter);
+// app.use('/api', apiLimiter);
+// app.use('/api/auth',authLimiter, authRoutes);
+
+
+if (env.isProduction) {
+  app.use('/api', apiLimiter);
+  app.use('/api/auth', authLimiter, authRoutes);
+} else {
+  app.use('/api/auth', authRoutes);
+}
 
 
 app.use("/api/auth/google", googleLimiter);
 
-app.use('/api/auth',authLimiter, authRoutes);
+
 
 app.use('/api/lists', taskListRoutes);
 
