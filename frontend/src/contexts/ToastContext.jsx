@@ -9,25 +9,24 @@ export function useToast() {
 
 export function ToastProvider({ children }) {
   const [toast, setToast] = useState(null);
-  const [isUndoing, setIsUndoing] = useState(false); // 🔥 New: Lock state for double-click prevention
+  const [isUndoing, setIsUndoing] = useState(false); 
   
-  // We use a Ref to track if the toast was closed via "Undo"
-  // so we don't trigger the permanent delete (onClose) if they successfully undid it.
   const isUndoneRef = useRef(false);
 
   // toast structure: { message, onUndo, onClose, id }
   const showUndoToast = useCallback((message, onUndoCallback, onCloseCallback) => {
-    // 1. Force close existing toast immediately (triggering its onClose if pending)
+    // 1. Force close existing toast immediately
     setToast((prev) => {
-      if (prev && prev.onClose && !isUndoneRef.current) {
-        prev.onClose();
-      }
+      // 🔥 FIX 1: Stop triggering Permanent Delete when a new toast replaces an old one
+      // if (prev && prev.onClose && !isUndoneRef.current) {
+      //   prev.onClose(); 
+      // }
       return null;
     });
 
     // 2. Reset flags
     isUndoneRef.current = false;
-    setIsUndoing(false); // Reset lock
+    setIsUndoing(false); 
 
     // 3. Show new toast after small delay
     setTimeout(() => {
@@ -42,10 +41,10 @@ export function ToastProvider({ children }) {
 
   const closeToast = useCallback(() => {
     setToast((prev) => {
-      // If closing manually (X button) and not undone, trigger onClose (Permanent Delete)
-      if (prev && prev.onClose && !isUndoneRef.current) {
-        prev.onClose();
-      }
+      // 🔥 FIX 2: Stop triggering Permanent Delete when clicking "X"
+      // if (prev && prev.onClose && !isUndoneRef.current) {
+      //   prev.onClose();
+      // }
       return null;
     });
   }, []);
@@ -54,13 +53,12 @@ export function ToastProvider({ children }) {
   useEffect(() => {
     if (toast) {
       const timer = setTimeout(() => {
-        // When timer expires, remove toast. 
-        // This triggers the state update logic below to fire onClose.
         setToast((prev) => {
           if (prev && prev.id === toast.id) {
-             if (prev.onClose && !isUndoneRef.current) {
-                prev.onClose(); 
-             }
+             // 🔥 FIX 3: Stop triggering Permanent Delete when Timer expires
+             // if (prev.onClose && !isUndoneRef.current) {
+             //   prev.onClose(); 
+             // }
              return null;
           }
           return prev;
@@ -71,19 +69,18 @@ export function ToastProvider({ children }) {
   }, [toast]);
 
   const handleUndo = async () => {
-    // 🔥 FIX: Prevent double execution
     if (!toast || !toast.onUndo || isUndoing) return;
 
-    setIsUndoing(true); // Lock immediately
-    isUndoneRef.current = true; // Mark as undone so onClose doesn't fire
+    setIsUndoing(true); 
+    isUndoneRef.current = true; 
 
     try {
       await toast.onUndo(); 
     } catch (error) {
       console.error("Undo failed", error);
     } finally {
-      setToast(null); // Close immediately after undoing
-      setIsUndoing(false); // Unlock
+      setToast(null); 
+      setIsUndoing(false); 
     }
   };
 
@@ -99,15 +96,15 @@ export function ToastProvider({ children }) {
             <button 
               className={styles.undoBtn} 
               onClick={handleUndo}
-              disabled={isUndoing} // 🔥 Disable button physically
-              style={{ opacity: isUndoing ? 0.5 : 1, cursor: isUndoing ? 'default' : 'pointer' }} // Visual feedback
+              disabled={isUndoing} 
+              style={{ opacity: isUndoing ? 0.5 : 1, cursor: isUndoing ? 'default' : 'pointer' }} 
             >
               {isUndoing ? "Restoring..." : "Undo"}
             </button>
             <button 
               className={styles.closeBtn} 
               onClick={closeToast}
-              disabled={isUndoing} // Prevent closing while restoring
+              disabled={isUndoing} 
             >✕</button>
           </div>
         </div>

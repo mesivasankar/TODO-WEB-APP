@@ -8,17 +8,19 @@ import { pool } from './config/db.js';
 import authRoutes from './routes/auth.routes.js';
 import taskListRoutes from './routes/tasklists.routes.js';
 import tasksRoutes from './routes/tasks.routes.js';
+import focusRoutes from './routes/focus.routes.js'; // 🔥 Ensure this import is active
+import analyticsRoutes from './routes/analytics.routes.js';
 import { errorHandler } from './middleware/error.middleware.js';
-import  googleLimiter  from './middleware/googleLimiter.middleware.js'
+import googleLimiter from './middleware/googleLimiter.middleware.js';
+import aiRoutes from './routes/ai.routes.js';
+import matrixRoutes from './routes/matrix.routes.js';
 
 const app = express();
-
 
 const corsOptions = {
   origin: env.clientUrl,
   credentials: true,
 };
-
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, 
@@ -27,11 +29,8 @@ const apiLimiter = rateLimit({
   legacyHeaders: false,     
 });
 
-
-
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, 
-  // max: 20,    
   max: env.isProduction ? 20 : 1000,              
   message: {
     message: 'Too many login or signup attempts from this IP, please try again later.',
@@ -40,20 +39,14 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-app.use(helmet(
-  {
-    crossOriginResourcePolicy: { policy: 'cross-origin' },
-  }));
-
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+}));
 
 app.use(cors(corsOptions));
-
 app.use(express.json({ limit: '1mb' })); 
 app.use(cookieParser());
-
-
 app.use(express.json());
-
 
 app.get('/health', async (req, res, next) => {
   try {
@@ -68,9 +61,7 @@ app.get('/health', async (req, res, next) => {
   }
 });
 
-// app.use('/api', apiLimiter);
-// app.use('/api/auth',authLimiter, authRoutes);
-
+// --- ROUTES ---
 
 if (env.isProduction) {
   app.use('/api', apiLimiter);
@@ -79,18 +70,20 @@ if (env.isProduction) {
   app.use('/api/auth', authRoutes);
 }
 
-
 app.use("/api/auth/google", googleLimiter);
 
-
-
 app.use('/api/lists', taskListRoutes);
+app.use('/api/lists/:listId/tasks', tasksRoutes); // For task creation inside lists
+app.use('/api/tasks', tasksRoutes);               // For direct task actions (update/delete)
 
-app.use('/api/lists/:listId/tasks', tasksRoutes);
+app.use('/api/ai', aiRoutes);
 
-app.use('/api/tasks', tasksRoutes);
+// 🔥 FOCUS MODE ROUTE ENABLED
+app.use('/api/focus', focusRoutes);
 
-app.use('/api/lists/:listId/tasks', tasksRoutes);
+app.use('/api/analytics', analyticsRoutes);
+
+app.use('/api/matrix', matrixRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);
@@ -100,8 +93,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-
 app.use(errorHandler);
-
 
 export default app;

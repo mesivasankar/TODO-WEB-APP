@@ -1,8 +1,5 @@
 import { apiRequest } from './client';
 
-
-
-
 export async function resendVerificationEmail(token) {
   return fetch(
     `${import.meta.env.VITE_API_BASE_URL}/api/auth/resend-verification`,
@@ -38,5 +35,13 @@ export async function getCurrentUser() {
 export async function logout() {
   return apiRequest('/api/auth/logout', {
     method: 'POST',
+  });
+}
+
+// 🔥 NEW FUNCTION: Update Profile
+export async function updateProfile(updates) {
+  return apiRequest('/api/auth/profile', {
+    method: 'PUT',
+    body: JSON.stringify(updates),
   });
 }

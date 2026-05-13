@@ -181,3 +181,35 @@ ALTER TABLE ONLY public.tasks
 --
 -- PostgreSQL database dump complete
 --
+
+
+
+
+
+CREATE TABLE focus_sessions (
+    id SERIAL PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    task_id UUID REFERENCES tasks(id) ON DELETE SET NULL, -- 🔥 CHANGED FROM BIGINT TO UUID
+    start_time TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    end_time TIMESTAMPTZ NOT NULL,
+    status VARCHAR(20) DEFAULT 'active',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+
+ALTER TABLE tasks ADD COLUMN recurrence_type VARCHAR(20) DEFAULT NULL;
+-- Values will be: 'DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY' or NULL
+
+
+
+-- 1. Add category to LISTS table (Defaulting to 'OTHERS')
+ALTER TABLE task_lists 
+ADD COLUMN category VARCHAR(20) NOT NULL DEFAULT 'OTHERS';
+
+-- 2. Add category to TASKS table (Defaulting to 'OTHERS')
+-- This stores the specific tag for that task (e.g., 'WORK', 'PERSONAL')
+ALTER TABLE tasks 
+ADD COLUMN category VARCHAR(20) NOT NULL DEFAULT 'OTHERS';
+
+-- 3. Ensure your existing Default List (My List) is tagged correctly
+UPDATE task_lists SET category = 'OTHERS' WHERE is_default = TRUE;

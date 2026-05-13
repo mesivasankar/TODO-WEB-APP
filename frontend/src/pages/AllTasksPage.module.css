@@ -1,110 +1,164 @@
 /* ================= WRAPPER ================= */
+.pageWrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
 .cardsWrapper {
   height: 100%;
   width: 100%;
-  padding: 24px 32px;
-  
+  padding: 24px;
   display: flex;
-  /* Align to top so they don't stretch to full height */
   align-items: flex-start;
-  gap: 20px; 
-  
-  /* Horizontal Scrolling setup */
+  gap: 16px; 
   overflow-x: auto;
   overflow-y: hidden;
-  
-  /* Snap behavior */
-  scroll-snap-type: x mandatory;
+  box-sizing: border-box;
   scroll-behavior: smooth;
-
-  box-sizing: border-box;
-  scroll-padding-inline: 32px;
+  -webkit-overflow-scrolling: touch;
+  /* 🔥 Prevents the "rubber-band" effect on the whole page during swipes */
+  overscroll-behavior-x: contain; 
 }
 
-/* Scrollbar Styling - Matching App Theme */
-.cardsWrapper::-webkit-scrollbar {
-  height: 8px;
-}
-.cardsWrapper::-webkit-scrollbar-track {
-  background: transparent;
-  margin: 0 32px; 
-}
-.cardsWrapper::-webkit-scrollbar-thumb {
-  background: var(--surface-3);
-  border-radius: 4px;
-}
-.cardsWrapper::-webkit-scrollbar-thumb:hover {
-  background: var(--border);
-}
-
-/* ================= CARD CONTAINER BASE ================= */
-.cardContainer {
-  /* 🔥 FIX: Changed from height: 100% to auto so it wraps content */
-  height: auto; 
-  max-height: 100%; /* Respect parent bounds */
-  
+.anchorWrapper {
+  height: 100%;
   display: flex;
-  flex-direction: column;
-  scroll-snap-align: start;
-  box-sizing: border-box;
+  flex-shrink: 0;
 }
+
+/* Scrollbar styling */
+.cardsWrapper::-webkit-scrollbar { height: 6px; }
+.cardsWrapper::-webkit-scrollbar-track { background: transparent; }
+.cardsWrapper::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 10px; }
 
 /* ================= LAYOUT MODES ================= */
+.singleView { justify-content: center; }
+.singleView .anchorWrapper { width: 100%; max-width: 800px; }
 
-/* 1. SINGLE VIEW: Centered & Wide */
-.singleView {
-  justify-content: center;
+.doubleView .anchorWrapper { width: calc(50% - 8px); }
+
+.tripleView .anchorWrapper { width: calc(33.33% - 10.6px); }
+
+.quadView .anchorWrapper { width: calc(25% - 12px); }
+
+.scrollView .anchorWrapper { 
+  width: calc(25% - 12px); 
 }
-.singleView .cardContainer {
+
+/* ================= CHIP NAV ================= */
+.chipNavWrapper {
   width: 100%;
-  max-width: 600px;
-  flex: 0 0 auto; 
+  background: var(--surface-1);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  z-index: 100;
 }
 
-/* 2. SPLIT VIEW (2-4 Items): Evenly split width */
-.splitView {
-  justify-content: flex-start;
-}
-.splitView .cardContainer {
-  flex: 1 1 0px; 
-  min-width: 320px; 
-  max-width: 500px; /* Optional: Cap width so they don't get too wide */
-}
-
-/* 3. SCROLL VIEW (5+ Items): Fixed width */
-.scrollView {
-  justify-content: flex-start;
-}
-.scrollView .cardContainer {
-  flex: 0 0 340px; 
-  max-width: none;
+.chipNav {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 12px 24px; 
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; 
 }
 
-/* ================= EMPTY STATE ================= */
+.chipNav::-webkit-scrollbar { display: none; }
+
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  padding: 6px 14px;
+  border-radius: 999px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.activeChip {
+  background: var(--surface-3);
+  border-color: var(--text-primary);
+  color: var(--text-primary);
+}
+
+.createListPill {
+  background: transparent !important;
+  border: 1px dashed var(--text-secondary) !important;
+}
+
+.createListPill:hover {
+  border-style: solid !important;
+  border-color: var(--primary) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* ================= MOBILE / TOUCH FIXES ================= */
+@media (max-width: 1024px) {
+  .cardsWrapper {
+    padding: 0;
+    gap: 0;
+    scroll-snap-type: x mandatory;
+    /* 🔥 Removes any extra padding that might cause misalignment during snap */
+    scroll-padding: 0; 
+  }
+
+  .anchorWrapper {
+    width: 100vw;
+    min-width: 100vw;
+    scroll-snap-align: center; 
+    /* 🔥 Forces the scroll to finish on a list card, preventing "half-swipes" */
+    scroll-snap-stop: always; 
+    padding: 12px; 
+    box-sizing: border-box;
+    justify-content: center;
+  }
+}
+
+/* ================= UI EXTRAS ================= */
+.cardContainer {
+  height: 100%; 
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative; 
+}
+
+.insertionLine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background-color: var(--text-primary); 
+  z-index: 10;
+}
+.lineLeft { left: -8px; }
+.lineRight { right: -8px; }
+
+.dragOverlayCard {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 20px;
+  box-shadow: 0 16px 32px rgba(0,0,0,0.4);
+  width: 280px; 
+}
+
 .emptyState {
   height: 100%;
-  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  animation: fadeIn 0.2s ease forwards;
 }
-
-.animation {
-  width: 260px;
-  max-width: 80%;
-  opacity: 0.8;
-}
-
-.text {
-  margin-top: 16px;
-  font-size: 15px;
-  color: var(--text-secondary);
-  text-align: center;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
+.animation { width: 260px; opacity: 0.8; }
+.text { margin-top: 16px; color: var(--text-secondary); }

@@ -12,6 +12,36 @@ export async function getAllStarredTasks() {
   return data.tasks;
 }
 
+export async function getTodayTasks() {
+  const response = await apiRequest(`/api/tasks/today`);
+  const data = await response.json();
+  return data.tasks;
+}
+
+export async function getOverdueTasks() {
+  const response = await apiRequest(`/api/tasks/overdue`);
+  const data = await response.json();
+  return data.tasks;
+}
+
+export async function getUpcomingTasks() {
+  const response = await apiRequest(`/api/tasks/upcoming`);
+  const data = await response.json();
+  return data.tasks;
+}
+
+export async function getSpecialTaskCounts() {
+  const response = await apiRequest(`/api/tasks/special-counts`);
+  const data = await response.json();
+  return data.counts;
+}
+
+export async function searchTasks(query) {
+  const response = await apiRequest(`/api/tasks/search?q=${encodeURIComponent(query)}`);
+  const data = await response.json();
+  return data;
+}
+
 export async function createTask(listId, taskData) {
   const response = await apiRequest(`/api/lists/${listId}/tasks`, {
     method: "POST",
@@ -30,17 +60,10 @@ export async function updateTask(taskId, updates) {
   return data.task;
 }
 
-// 🔥 NEW: Reorder API
 export async function reorderTasks(listId, orderedIds) {
-  // Note: Depending on your route setup, this might be /api/lists/:listId/tasks/reorder
-  // or /api/tasks/reorder if the listId is passed in the body.
-  // Based on your routes, it is likely mounted under /api/lists/:listId/tasks
   await apiRequest(`/api/lists/${listId}/tasks/reorder`, {
     method: "PATCH",
-    body: JSON.stringify(orderedIds), // Controller expects array directly or { orderedIds }? 
-    // Controller `sortTasksInList` usually expects the body to BE the array based on previous code.
-    // Let's ensure we send what the controller expects.
-    // If controller does: const orderedIds = req.body; -> Send Array
+    body: JSON.stringify(orderedIds), 
   });
 }
 
@@ -76,6 +99,14 @@ export async function permanentDeleteTask(taskId) {
   });
 }
 
+export async function clearCompletedTasks(listId) {
+  const response = await apiRequest(`/api/lists/${listId}/tasks/completed`, {
+    method: "DELETE",
+  });
+  const data = await response.json();
+  return data;
+}
+
 export async function restoreTask(taskId) {
   const response = await apiRequest(`/api/tasks/${taskId}/restore`, {
     method: "PATCH",
@@ -83,3 +114,61 @@ export async function restoreTask(taskId) {
   const data = await response.json();
   return data.task;
 }
+
+export async function bulkRestoreTasks(taskIds) {
+  const response = await apiRequest(`/api/tasks/restore-bulk`, {
+    method: "PATCH",
+    body: JSON.stringify({ taskIds }),
+  });
+  const data = await response.json();
+  return data;
+}
+
+export async function bulkPermanentDeleteTasks(taskIds) {
+  const response = await apiRequest(`/api/tasks/permanent-bulk`, {
+    method: "DELETE",
+    body: JSON.stringify({ taskIds }),
+  });
+  const data = await response.json();
+  return data;
+}
+
+export async function getAnalytics() {
+  const response = await apiRequest(`/api/analytics`);
+  return response.json();
+}
+
+export const startFocusSession = async (taskId) => {
+  const response = await apiRequest('/api/focus/start', {
+    method: 'POST',
+    body: JSON.stringify({ taskId })
+  });
+  const data = await response.json();
+  return data;
+};
+
+export const stopFocusSession = async () => {
+  const response = await apiRequest('/api/focus/stop', {
+    method: 'POST'
+  });
+  const data = await response.json();
+  return data;
+};
+
+export const getFocusStatus = async () => {
+  const response = await apiRequest('/api/focus/status');
+  const data = await response.json();
+  return data;
+};
+
+export const suggestSubtasks = async (taskTitle) => {
+  const response = await apiRequest('/api/ai/suggest-subtasks', {
+    method: 'POST',
+    body: JSON.stringify({ taskTitle })
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to generate suggestions");
+  }
+  return data.subtasks; 
+};

@@ -1,0 +1,229 @@
+.container {
+  padding: 30px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  margin-bottom: 20px;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 20px;
+  flex: 1;
+}
+
+.quadrant {
+  background: var(--surface-1);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border);
+}
+
+.quadHeader {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 15px;
+}
+
+.quadTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.quadAction {
+  font-size: 10px;
+  color: var(--text-secondary);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.taskList {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 10px;
+}
+
+/* --- TASK CARD --- */
+
+.taskCard {
+  background: var(--surface-2);
+  padding: 12px 14px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start; /* Aligns items to top for vertical wrapping */
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  animation: taskSlideIn 0.3s ease-out forwards;
+}
+
+.taskCard:hover {
+  background: var(--surface-3);
+  border-color: var(--border);
+}
+
+.cardLeft {
+  display: flex;
+  align-items: flex-start; /* Aligns checkbox with the top line of text */
+  gap: 12px;
+  flex: 1;
+  min-width: 0; /* Prevents flex items from overflowing */
+}
+
+.checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--text-primary);
+  flex-shrink: 0;
+  margin-top: 3px; /* Centers checkbox with the first line of text */
+}
+
+.taskText {
+  font-size: 14px;
+  color: var(--text-primary);
+  flex: 1;
+  cursor: text;
+  padding: 2px 0;
+  transition: all 0.2s ease;
+  line-height: 1.5;
+  
+  /* Vertical Wrapping Logic */
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.completed .taskText {
+  color: var(--text-secondary);
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+/* --- INLINE EDIT INPUT --- */
+
+.editInput {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--text-secondary);
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+  width: 100%;
+  padding: 0;
+  line-height: 1.5;
+}
+
+/* --- HOVER ACTIONS --- */
+
+.hoverMenu {
+  display: none;
+  margin-left: 10px;
+  margin-top: 2px;
+}
+
+.taskCard:hover .hoverMenu {
+  display: flex;
+}
+
+.menuBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.menuBtn:hover {
+  opacity: 1;
+}
+
+/* --- INPUT WITH BUTTON --- */
+
+.inputWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-top: auto;
+}
+
+.matrixInput {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 12px 45px 12px 16px;
+  border-radius: 10px;
+  outline: none;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.matrixInput:focus {
+  border-color: var(--text-secondary);
+}
+
+.innerAddBtn {
+  position: absolute;
+  right: 8px;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: bold;
+  transition: all 0.2s;
+}
+
+.innerAddBtn:hover:not(:disabled) {
+  background: var(--text-primary);
+  color: var(--surface-1);
+}
+
+.innerAddBtn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* --- LIMIT --- */
+
+.limitReached {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-secondary);
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+}
+
+@keyframes taskSlideIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.taskList::-webkit-scrollbar {
+  width: 4px;
+}
+.taskList::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 10px;
+}

@@ -5,32 +5,52 @@ import {
   updateTask, 
   sortTasksInList, 
   deleteTask, 
-  permanentDeleteTask,
+  permanentDeleteTask, 
   getTask, 
   restoreTask, 
   getSubtasks, 
-  getAllStarredTasks 
+  getAllStarredTasks,
+  searchTasks,
+  getTodayTasks,
+  getUpcomingTasks,
+  getOverdueTasks, // 🔥 Now this export exists!
+  getSpecialTaskCounts,
+  getAnalytics,
+  clearCompletedTasks,
+  bulkRestoreTasks,
+  bulkPermanentDeleteTasks
 } from '../controllers/tasks.controller.js';
 import { requireAuth } from '../middleware/auth.middleware.js';
 
 const router = express.Router({ mergeParams: true });
 
+// 1. Starred & Search
 router.get('/starred', requireAuth, getAllStarredTasks);
+router.get('/search', requireAuth, searchTasks);
+
+// 2. 🔥 Smart Views & Analytics (MUST come before /:taskId)
+router.get('/special-counts', requireAuth, getSpecialTaskCounts);
+router.get('/today', requireAuth, getTodayTasks);
+router.get('/upcoming', requireAuth, getUpcomingTasks);
+router.get('/overdue', requireAuth, getOverdueTasks); 
+router.get('/analytics', requireAuth, getAnalytics);
+
+// 3. List Routes
 router.get('/', requireAuth, getTasksInList);
+router.post('/', requireAuth, createTask);
+router.patch('/reorder', requireAuth, sortTasksInList); 
+
+// 4. Task Specific Routes
+router.patch('/restore-bulk', requireAuth, bulkRestoreTasks);
 router.patch('/:taskId/restore', requireAuth, restoreTask);
 router.get('/:taskId/subtasks', requireAuth, getSubtasks);
 router.get('/:taskId', requireAuth, getTask);
-router.post('/', requireAuth, createTask);
-
-// 🔥 NEW: Reorder endpoint (Consistent naming with Lists)
-router.patch('/reorder', requireAuth, sortTasksInList); 
-
 router.patch('/:taskId', requireAuth, updateTask);
 
-// Soft Delete (Default)
+// 5. Delete Routes
+router.delete('/completed', requireAuth, clearCompletedTasks);
+router.delete('/permanent-bulk', requireAuth, bulkPermanentDeleteTasks);
 router.delete('/:taskId', requireAuth, deleteTask);
-
-// Hard Delete (Permanent)
 router.delete('/:taskId/permanent', requireAuth, permanentDeleteTask);
 
 export default router;

@@ -4,37 +4,32 @@
   --surface-1: #1A1A1A;   /* main panels */
   --surface-2: #202020;   /* cards / inputs */
   --surface-3: #262626;   /* hover / selected */
-  --surface-4: #3b3b3b;   /* hover / selected */
-  
+  --surface-4: #3b3b3b;   /* active states */
 
   --border: #2A2A2A;      /* dividers */
 
   --text-primary: #FFFFFF;
   --text-secondary: #B3B3B3;
   --text-muted: #7A7A7A; 
-  --over-due: rgb(249, 113, 113); /* subtle info */
-
+  --over-due: rgb(249, 113, 113); 
   --err-msg: rgb(255, 0, 0);
 }
 
-
+/* LIGHT THEME OVERRIDES */
 [data-theme="light"] {
   --bg: #FFFFFF;
   --surface-1: #F7F7F8;
   --surface-2: #EDEDED;
-  --surface-3: #E2E2E2;   /* hover / selected */
+  --surface-3: #E2E2E2;   
 
   --border: #DADADA;
 
   --text-primary: #000000;
   --text-secondary: #4D4D4D;
-  --text-muted: #8A8A8A;  /* subtle info */
-  --over-due: rgb(249, 113, 113); /* subtle info */
-
+  --text-muted: #8A8A8A;  
+  --over-due: rgb(249, 113, 113); 
   --err-msg: rgb(255, 0, 0);
 }
-
-
 
 * {
   box-sizing: border-box;
@@ -42,8 +37,34 @@
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
-    sans-serif;
-  background-color: var(--color-bg);
-  color: var(--color-text);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  
+  /* 🔥 FIX 1: Use the correct variable names */
+  background-color: var(--bg);
+  color: var(--text-primary);
+}
+
+/* 🔥 FIX 2: GLOBAL SCROLLBAR STYLES 
+   This makes EVERY scrollbar in your app (including Analytics) dark & transparent */
+
+/* Vertical Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px; /* For horizontal scrolling */
+}
+
+/* Track is transparent (invisible) */
+::-webkit-scrollbar-track {
+  background: transparent; 
+}
+
+/* Thumb is your surface color */
+::-webkit-scrollbar-thumb {
+  background: var(--surface-3);
+  border-radius: 8px;
+}
+
+/* Hover effect */
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border);
 }

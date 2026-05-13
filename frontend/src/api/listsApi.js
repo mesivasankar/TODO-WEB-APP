@@ -6,10 +6,12 @@ export async function getLists() {
   return data.lists;
 }
 
-export async function createList(name) {
+// 🔥 UPDATED: Now accepts category
+export async function createList(name, category = 'OTHERS') {
   const response = await apiRequest("/api/lists", {
     method: "POST",
-    body: JSON.stringify({ name }),
+    // Send both name and category to the backend
+    body: JSON.stringify({ name, category }),
   });
 
   const data = await response.json();

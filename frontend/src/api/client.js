@@ -52,6 +52,11 @@ export async function apiRequest(url, options = {}) {
     throw error;
   }
 
+  // 🔥 Trigger global data reload event for successful mutations
+  if (options.method && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(options.method.toUpperCase())) {
+    window.dispatchEvent(new Event('app-data-changed'));
+  }
+
   return response;
 }
 

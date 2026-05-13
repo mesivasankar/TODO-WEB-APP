@@ -1,0 +1,121 @@
+.menuContainer {
+  position: absolute;
+  top: 60px;
+  right: 20px;
+  width: 280px;
+  background-color: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+  padding: 16px;
+  z-index: 5000;
+  display: flex;
+  flex-direction: column;
+  animation: slideIn 0.2s ease;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* User Info */
+.userInfo { margin-bottom: 12px; }
+.userHeader { display: flex; align-items: center; gap: 12px; }
+.userAvatar { width: 40px; height: 40px; border-radius: 50%; background-color: var(--surface-3); color: var(--text-primary); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; flex-shrink: 0; }
+.nameWrapper { flex: 1; display: flex; align-items: center; gap: 8px; overflow: hidden; }
+.userName { font-size: 16px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Edit Input */
+.editInput { 
+  width: 100%; 
+  background: var(--surface-2); 
+  border: 1px solid var(--border); 
+  border-radius: 6px; 
+  color: var(--text-primary); 
+  padding: 6px 8px; 
+  font-size: 14px;
+  outline: none;
+}
+.editInput:focus { border-color: var(--text-secondary); }
+
+.editButton { background: none; border: none; cursor: pointer; color: var(--text-secondary); opacity: 0.5; transition: opacity 0.2s; }
+.editButton:hover { opacity: 1; }
+
+/* 🔥 THEMED ACTION BUTTONS */
+.saveActions { display: flex; gap: 6px; }
+
+.actionBtn { 
+  width: 28px; height: 28px; 
+  display: flex; align-items: center; justify-content: center; 
+  border-radius: 6px; 
+  border: 1px solid var(--border); 
+  cursor: pointer; 
+  transition: all 0.2s;
+}
+
+/* Save (Check) - Uses Theme Surface */
+.saveBtn { 
+  background: var(--surface-3); 
+  color: var(--text-primary); 
+}
+.saveBtn:hover { 
+  background: var(--text-primary); 
+  color: var(--bg); /* Inverts on hover */
+  border-color: var(--text-primary);
+}
+
+/* Cancel (X) - Transparent */
+.cancelBtn { 
+  background: transparent; 
+  color: var(--text-secondary); 
+  border-color: transparent;
+}
+.cancelBtn:hover { 
+  background: var(--surface-2); 
+  color: var(--text-primary); 
+}
+
+.separator { height: 1px; background-color: var(--border); margin: 12px 0; }
+.sectionTitle { font-size: 12px; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px; }
+
+/* Theme Toggle */
+.themeToggle { display: flex; background-color: var(--surface-2); border-radius: 8px; padding: 4px; gap: 4px; }
+.themeButton { flex: 1; background: none; border: none; padding: 6px; border-radius: 6px; color: var(--text-secondary); font-size: 13px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.activeTheme { background-color: var(--surface-1); color: var(--text-primary); box-shadow: 0 2px 4px rgba(0,0,0,0.1); font-weight: 500; }
+
+/* Menu Items */
+.menuItem, .logoutButton {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.menuItem:hover {
+  background-color: var(--surface-2);
+  color: var(--text-primary);
+}
+
+.menuIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+}
+.menuItem:hover .menuIcon { color: var(--text-primary); }
+
+.logoutButton:hover {
+  color: var(--err-msg); /* Uses Global Error Red */
+  background-color: var(--surface-2);
+}
+.logoutButton:hover .menuIcon { color: var(--err-msg); }

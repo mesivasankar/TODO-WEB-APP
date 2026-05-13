@@ -1,6 +1,6 @@
 import { useOutletContext } from "react-router-dom";
 import ListTasksCard from "../components/ListTasksCard";
-import styles from "./StarredTasksPage.module.css";
+import styles from "./SmartTaskPage.module.css"; // 🔥 Shared CSS
 
 export default function StarredTasksPage() {
   const { lists, onRenameList, onDeleteList } = useOutletContext();
@@ -12,7 +12,6 @@ export default function StarredTasksPage() {
     <div className={styles.pageContainer}>
       <div className={styles.cardsWrapper}>
         <ListTasksCard
-          // Pass null for list but enable Starred Mode
           list={null}
           onRenameList={onRenameList}
           onDeleteList={onDeleteList}

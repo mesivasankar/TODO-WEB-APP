@@ -3,7 +3,8 @@ import {
   getTaskListsForUser, 
   createTaskListForUser, 
   renameTaskListForUser,
-  reorderTaskListsForUser // Import new service
+  reorderTaskListsForUser,
+  softDeleteTaskListForUser // <--- 🔥 IMPORT THIS
 } from '../services/tasklists.service.js';
 
 export async function getTaskLists(req, res, next) {
@@ -19,7 +20,9 @@ export async function getTaskLists(req, res, next) {
 export async function createTaskList(req, res, next) {
   try {
     const userId = req.user.id;
-    const { name } = req.body || {};
+    
+    // 🔥 FIX: Read 'category' from the request
+    const { name, category } = req.body || {};
 
     if (!name || typeof name !== 'string') {
       return res.status(400).json({ message: 'List name is required.' });
@@ -35,12 +38,15 @@ export async function createTaskList(req, res, next) {
       return res.status(400).json({ message: 'List name is too long (max 100 characters).' });
     }
     
-    const newList = await createTaskListForUser(userId, trimmedName);
+    // 🔥 FIX: Pass the category to the database
+    const newList = await createTaskListForUser(userId, trimmedName, category || 'OTHERS');
+    
     return res.status(201).json({ list: newList });
   } catch (err) {
     return next(err);
   }
 }
+
 
 export async function renameTaskList(req, res, next) {
   try {
@@ -74,7 +80,6 @@ export async function renameTaskList(req, res, next) {
   }
 }
 
-// 🔥 NEW: Reorder Controller
 export async function reorderTaskLists(req, res, next) {
   try {
     const userId = req.user.id;
@@ -96,6 +101,7 @@ export async function deleteTaskList(req, res, next) {
     const userId = req.user.id;
     const listId = req.params.id;
     
+    // Check if list exists and is default
     const { rows } = await pool.query(
       `SELECT id, is_default FROM task_lists WHERE id = $1 AND user_id = $2 LIMIT 1`,
       [listId, userId]
@@ -111,12 +117,10 @@ export async function deleteTaskList(req, res, next) {
       return res.status(400).json({ message: 'Default list cannot be deleted.' });
     }
 
-    await pool.query(
-      `DELETE FROM task_lists WHERE id = $1 AND user_id = $2`,
-      [listId, userId]
-    );
+    // 🔥 FIX: Use Soft Delete instead of permanent DELETE
+    await softDeleteTaskListForUser(userId, listId);
 
-    return res.json({ message: 'List deleted successfully.' });
+    return res.json({ message: 'List archived successfully.' });
   } catch (err) {
     return next(err);
   }
