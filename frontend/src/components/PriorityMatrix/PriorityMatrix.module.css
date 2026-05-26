@@ -3,113 +3,305 @@
   height: 100%;
   display: flex;
   flex-direction: column;
+  animation: fadeIn 0.4s ease-out;
+}
+
+.headerArea {
+  margin-bottom: 16px;
+  /* Reduced from 24px */
 }
 
 .header {
-  margin-bottom: 20px;
+  margin: 0;
   font-size: 24px;
-  font-weight: 600;
+  /* Slightly more compact */
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: var(--text-primary);
+}
+
+.subtitle {
+  margin: 4px 0 0 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+  opacity: 0.8;
+}
+
+.matrixWrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  position: relative;
+  min-height: 0;
+  margin-top: 5px;
+}
+
+.xAxisLabelTop {
+  display: flex;
+  justify-content: space-around;
+  padding: 5px 0 10px 40px;
+  /* More compact top spacing */
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+.matrixContent {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+.yAxisLabelLeft {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  align-items: center;
+  width: 40px;
+  padding-right: 12px;
+}
+
+.axisTextVertical {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 2.5px;
+  color: var(--text-secondary);
+  opacity: 0.7;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.gridContainer {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: 1fr 1fr;
-  gap: 20px;
+  gap: 16px;
+  /* Reduced from 24px for tighter matrix spacing */
   flex: 1;
+  min-height: 0;
 }
+
+/* --- QUADRANTS --- */
 
 .quadrant {
   background: var(--surface-1);
-  border-radius: 12px;
-  padding: 20px;
+  border-radius: 14px;
+  padding: 16px 20px;
+  /* Reduced from 24px to maximize vertical space */
   display: flex;
   flex-direction: column;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.04);
   border: 1px solid var(--border);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  min-height: 180px;
+  /* Prevent shrinking too much */
+}
+
+.quad1 {
+  border-top: 4px solid #f87171;
+}
+
+.quad1:hover {
+  box-shadow: 0 10px 24px rgba(248, 113, 113, 0.06);
+  border-color: rgba(248, 113, 113, 0.3);
+}
+
+.quad2 {
+  border-top: 4px solid #818cf8;
+}
+
+.quad2:hover {
+  box-shadow: 0 10px 24px rgba(129, 140, 248, 0.06);
+  border-color: rgba(129, 140, 248, 0.3);
+}
+
+.quad3 {
+  border-top: 4px solid #fbbf24;
+}
+
+.quad3:hover {
+  box-shadow: 0 10px 24px rgba(251, 191, 36, 0.06);
+  border-color: rgba(251, 191, 36, 0.3);
+}
+
+.quad4 {
+  border-top: 4px solid #34d399;
+}
+
+.quad4:hover {
+  box-shadow: 0 10px 24px rgba(52, 211, 153, 0.06);
+  border-color: rgba(52, 211, 153, 0.3);
 }
 
 .quadHeader {
   display: flex;
-  flex-direction: column;
-  margin-bottom: 15px;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  /* Tighter heading gap */
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.badge {
+  width: 20px;
+  /* More compact badge */
+  height: 20px;
+  border-radius: 5px;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .quadTitle {
   font-size: 14px;
-  font-weight: 700;
+  /* More compact */
+  font-weight: 600;
   color: var(--text-primary);
+  margin: 0;
 }
 
 .quadAction {
-  font-size: 10px;
-  color: var(--text-secondary);
+  font-size: 9px;
+  font-weight: 800;
   letter-spacing: 1px;
   text-transform: uppercase;
+  opacity: 0.95;
 }
 
 .taskList {
   flex: 1;
   overflow-y: auto;
-  margin-bottom: 10px;
+  margin: 4px 0 8px 0;
+  /* Tightened margins */
+  padding-right: 2px;
 }
 
 /* --- TASK CARD --- */
 
 .taskCard {
   background: var(--surface-2);
-  padding: 12px 14px;
+  padding: 8px 12px;
+  /* Reduced from 12px 16px for a slimmer profile */
   border-radius: 10px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
+  /* Tighter task gap */
   display: flex;
   justify-content: space-between;
-  align-items: flex-start; /* Aligns items to top for vertical wrapping */
-  border: 1px solid transparent;
-  transition: all 0.2s ease;
+  align-items: center;
+  border: 1px solid var(--border);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.01);
   animation: taskSlideIn 0.3s ease-out forwards;
 }
 
 .taskCard:hover {
+  transform: translateY(-1px);
   background: var(--surface-3);
-  border-color: var(--border);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.04);
 }
 
 .cardLeft {
   display: flex;
-  align-items: flex-start; /* Aligns checkbox with the top line of text */
-  gap: 12px;
+  align-items: center;
+  gap: 10px;
   flex: 1;
-  min-width: 0; /* Prevents flex items from overflowing */
+  min-width: 0;
+}
+
+.checkboxWrapper {
+  position: relative;
+  width: 16px;
+  /* Compacted from 18px */
+  height: 16px;
+  cursor: pointer;
+  flex-shrink: 0;
 }
 
 .checkbox {
-  width: 16px;
-  height: 16px;
+  position: absolute;
+  opacity: 0;
   cursor: pointer;
-  accent-color: var(--text-primary);
-  flex-shrink: 0;
-  margin-top: 3px; /* Centers checkbox with the first line of text */
+  height: 0;
+  width: 0;
+}
+
+.customCheck {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 16px;
+  width: 16px;
+  background-color: transparent;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.checkboxWrapper:hover .customCheck {
+  transform: scale(1.05);
+}
+
+.checkboxWrapper .customCheck::after {
+  content: "";
+  position: absolute;
+  display: none;
+  left: 4px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.checkbox:checked~.customCheck::after {
+  display: block;
 }
 
 .taskText {
-  font-size: 14px;
+  font-size: 13px;
+  /* Slightly more compact font */
   color: var(--text-primary);
   flex: 1;
-  cursor: text;
-  padding: 2px 0;
+  cursor: pointer;
+  padding: 1px 0;
   transition: all 0.2s ease;
-  line-height: 1.5;
-  
-  /* Vertical Wrapping Logic */
+  line-height: 1.4;
   white-space: normal;
   word-break: break-word;
   overflow-wrap: break-word;
+  font-weight: 500;
 }
 
 .completed .taskText {
   color: var(--text-secondary);
   text-decoration: line-through;
-  opacity: 0.6;
+  opacity: 0.5;
 }
 
 /* --- INLINE EDIT INPUT --- */
@@ -117,41 +309,72 @@
 .editInput {
   background: transparent;
   border: none;
-  border-bottom: 1px solid var(--text-secondary);
+  border-bottom: 2px solid var(--text-secondary);
   color: var(--text-primary);
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 500;
   outline: none;
   width: 100%;
-  padding: 0;
-  line-height: 1.5;
+  padding: 0 0 1px 0;
+  line-height: 1.4;
 }
 
-/* --- HOVER ACTIONS --- */
+/* --- DELETE BUTTON --- */
 
-.hoverMenu {
-  display: none;
-  margin-left: 10px;
-  margin-top: 2px;
-}
-
-.taskCard:hover .hoverMenu {
-  display: flex;
-}
-
-.menuBtn {
+.deleteBtn {
   background: none;
   border: none;
+  color: var(--text-secondary);
   cursor: pointer;
+  padding: 4px;
+  /* More compact */
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: all 0.2s ease;
+  margin-left: 8px;
+}
+
+.taskCard:hover .deleteBtn {
+  opacity: 0.6;
+}
+
+.deleteBtn:hover {
+  opacity: 1 !important;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+}
+
+/* --- EMPTY STATE --- */
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 54px;
+  /* Slim empty state height */
+  color: var(--text-secondary);
+  opacity: 0.35;
+  border: 1.5px dashed var(--border);
+  border-radius: 10px;
+  margin: 4px 0;
+  gap: 4px;
+}
+
+.emptyIcon {
   font-size: 14px;
-  opacity: 0.7;
-  transition: opacity 0.2s;
 }
 
-.menuBtn:hover {
-  opacity: 1;
+.emptyText {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
 }
 
-/* --- INPUT WITH BUTTON --- */
+/* --- INPUT GROUP --- */
 
 .inputWrapper {
   position: relative;
@@ -165,65 +388,235 @@
   background: var(--surface-2);
   border: 1px solid var(--border);
   color: var(--text-primary);
-  padding: 12px 45px 12px 16px;
+  padding: 8px 36px 8px 12px;
+  /* Slimmed padding */
   border-radius: 10px;
   outline: none;
-  font-size: 14px;
-  transition: border-color 0.2s;
+  font-size: 13px;
+  transition: all 0.2s ease;
 }
 
 .matrixInput:focus {
   border-color: var(--text-secondary);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.03);
 }
 
 .innerAddBtn {
   position: absolute;
-  right: 8px;
-  background: var(--surface-3);
-  border: 1px solid var(--border);
-  color: var(--text-primary);
-  width: 28px;
-  height: 28px;
+  right: 6px;
+  color: #fff;
+  border: none;
+  width: 24px;
+  /* Reduced from 28px */
+  height: 24px;
   border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 18px;
+  font-size: 14px;
   font-weight: bold;
   transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
 }
 
-.innerAddBtn:hover:not(:disabled) {
-  background: var(--text-primary);
-  color: var(--surface-1);
+.innerAddBtn:hover {
+  transform: scale(1.05);
+  filter: brightness(1.1);
 }
 
-.innerAddBtn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-/* --- LIMIT --- */
+/* --- LIMIT / LOCKS --- */
 
 .limitReached {
   text-align: center;
   font-size: 11px;
+  font-weight: 600;
   color: var(--text-secondary);
-  padding: 10px;
-  background: rgba(0, 0, 0, 0.05);
-  border-radius: 8px;
+  padding: 8px 12px;
+  /* Slimmed padding */
+  background: var(--surface-2);
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  animation: pulse 2s infinite;
+  margin-top: auto;
 }
 
+.lockIcon {
+  opacity: 0.8;
+}
+
+/* --- GLOWING CENTER BADGE --- */
+
+.centerBadge {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 32px;
+  /* Slightly smaller centered badge */
+  height: 32px;
+  background: var(--surface-1);
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 0 10px var(--border);
+  z-index: 10;
+  pointer-events: none;
+  transition: all 0.3s ease;
+}
+
+.centerCross {
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.8;
+}
+
+/* --- KEYFRAMES & MEDIA QUERIES --- */
+
 @keyframes taskSlideIn {
-  from { opacity: 0; transform: translateY(-8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.9;
+  }
+
+  50% {
+    opacity: 0.6;
+  }
+
+  100% {
+    opacity: 0.9;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .taskList::-webkit-scrollbar {
   width: 4px;
 }
+
 .taskList::-webkit-scrollbar-thumb {
   background: var(--border);
   border-radius: 10px;
+}
+
+@media (max-width: 950px) {
+  .xAxisLabelTop {
+    display: none;
+  }
+
+  .yAxisLabelLeft {
+    display: none;
+  }
+
+  .matrixContent {
+    padding-left: 0;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    gap: 16px;
+    overflow-y: auto;
+  }
+
+  .centerBadge {
+    display: none;
+  }
+
+  .quadrant {
+    padding: 16px;
+    min-height: 200px;
+  }
+}
+
+/* --- DRAG AND DROP STYLES --- */
+
+.gripHandle {
+  cursor: grab;
+  padding: 4px;
+  margin-right: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  border-radius: 4px;
+  transition: background 0.2s ease, color 0.2s ease;
+  user-select: none;
+  touch-action: none;
+}
+
+.gripHandle:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
+.gripHandle:active {
+  cursor: grabbing;
+}
+
+.dragging {
+  opacity: 0.3 !important;
+  border-style: dashed !important;
+  border-color: var(--border) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.dragOverlay {
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  background: var(--surface-3) !important;
+  pointer-events: none;
+}
+
+/* Quadrant Glows during Drag-over */
+.quadGlow {
+  background: rgba(255, 255, 255, 0.02) !important;
+}
+
+.quad1.quadGlow {
+  border-color: rgba(248, 113, 113, 0.8) !important;
+  box-shadow: 0 0 25px rgba(248, 113, 113, 0.15) !important;
+}
+
+.quad2.quadGlow {
+  border-color: rgba(129, 140, 248, 0.8) !important;
+  box-shadow: 0 0 25px rgba(129, 140, 248, 0.15) !important;
+}
+
+.quad3.quadGlow {
+  border-color: rgba(251, 191, 36, 0.8) !important;
+  box-shadow: 0 0 25px rgba(251, 191, 36, 0.15) !important;
+}
+
+.quad4.quadGlow {
+  border-color: rgba(52, 211, 153, 0.8) !important;
+  box-shadow: 0 0 25px rgba(52, 211, 153, 0.15) !important;
 }

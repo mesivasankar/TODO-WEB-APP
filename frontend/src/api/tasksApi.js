@@ -138,37 +138,30 @@ export async function getAnalytics() {
   return response.json();
 }
 
-export const startFocusSession = async (taskId) => {
-  const response = await apiRequest('/api/focus/start', {
-    method: 'POST',
-    body: JSON.stringify({ taskId })
-  });
-  const data = await response.json();
-  return data;
-};
 
-export const stopFocusSession = async () => {
-  const response = await apiRequest('/api/focus/stop', {
-    method: 'POST'
-  });
-  const data = await response.json();
-  return data;
-};
 
-export const getFocusStatus = async () => {
-  const response = await apiRequest('/api/focus/status');
-  const data = await response.json();
-  return data;
-};
-
-export const suggestSubtasks = async (taskTitle) => {
+export const suggestSubtasks = async (taskTitle, instruction = "") => {
   const response = await apiRequest('/api/ai/suggest-subtasks', {
     method: 'POST',
-    body: JSON.stringify({ taskTitle })
+    body: JSON.stringify({ taskTitle, instruction })
   });
   const data = await response.json();
   if (!response.ok) {
     throw new Error(data.message || "Failed to generate suggestions");
   }
-  return data.subtasks; 
+  return {
+    subtasks: data.subtasks,
+    dailyLimit: data.dailyLimit,
+    dailyRemaining: data.dailyRemaining,
+    isProduction: data.isProduction
+  };
+};
+
+export const getAiUsage = async () => {
+  const response = await apiRequest('/api/ai/usage');
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to fetch usage");
+  }
+  return data;
 };

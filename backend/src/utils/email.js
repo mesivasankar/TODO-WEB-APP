@@ -131,8 +131,13 @@
 
 
 
-import nodemailer from 'nodemailer';
 import { env } from '../config/env.js';
+import nodemailer from 'nodemailer';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /* =====================================================
    TRANSPORTERS
@@ -151,14 +156,14 @@ const devTransporter = nodemailer.createTransport({
 // PROD → real SMTP provider (placeholder)
 let prodTransporter = null;
 
-if (process.env.NODE_ENV === 'production') {
+if (env.isProduction) {
   prodTransporter = nodemailer.createTransport({
-    host: env.smtpHost || process.env.SMTP_HOST,
-    port: env.smtpPort || process.env.SMTP_PORT,
-    secure: false,
+    host: env.smtpHost || 'smtp.gmail.com',
+    port: parseInt(env.smtpPort) || 465,
+    secure: parseInt(env.smtpPort) === 465, 
     auth: {
-      user: env.smtpUser || process.env.SMTP_USER,
-      pass: env.smtpPass || process.env.SMTP_PASS,
+      user: env.smtpUser,
+      pass: env.smtpPass,
     },
   });
 }
@@ -170,12 +175,80 @@ if (process.env.NODE_ENV === 'production') {
 function buildVerificationEmailHtml(verificationUrl) {
   return `<!DOCTYPE html>
 <html lang="en">
-  <body style="margin:0; padding:0; background-color:#f4f4f7;">
-    <h2>ACTDONE</h2>
-    <p>Please verify your email:</p>
-    <a href="${verificationUrl}">Verify Email</a>
-    <p>${verificationUrl}</p>
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verify your email</title>
+</head>
+<body style="margin:0; padding:0; background-color:#000000; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; color: #ffffff;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="padding:80px 0;">
+    <tr>
+      <td align="center">
+        <table width="500" cellpadding="0" cellspacing="0" style="background:#111111; border-radius:4px; border: 1px solid #222222;">
+          
+          <!-- Header -->
+          <tr>
+            <td align="center" style="padding:60px 40px 30px 40px;">
+              <div style="font-size:32px; font-weight:800; color:#ffffff; letter-spacing:0.3em; text-transform:uppercase; margin-bottom:10px;">
+                ACTDONE
+              </div>
+              <div style="font-size:11px; font-weight:500; color:#888888; letter-spacing:0.4em; text-transform:uppercase;">
+                PLAN, ACT, GET IT DONE...
+              </div>
+            </td>
+          </tr>
+
+          <!-- Content -->
+          <tr>
+            <td style="padding:0 40px 60px 40px; text-align:center;">
+              <div style="height:1px; background:#222222; margin:30px 0 40px 0;"></div>
+              
+              <p style="margin:0; font-size:16px; line-height:26px; color:#ffffff; font-weight:400;">
+                To finalize your registration, please verify your email address. 
+                This ensures your account is secure and ready for use.
+              </p>
+
+              <!-- Button -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:40px;">
+                <tr>
+                  <td align="center">
+                    <a href="${verificationUrl}" 
+                       style="background:#ffffff; color:#000000; padding:18px 40px; border-radius:2px; font-size:14px; font-weight:800; text-decoration:none; display:inline-block; letter-spacing:0.15em; text-transform:uppercase;">
+                      VERIFY ACCOUNT
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Fallback -->
+              <div style="margin-top:50px;">
+                <p style="margin:0; font-size:11px; color:#666666; line-height:18px;">
+                  If the button is not active, please use this link:
+                  <br>
+                  <a href="${verificationUrl}" style="color:#888888; word-break:break-all; text-decoration:underline;">${verificationUrl}</a>
+                </p>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:0 40px 40px 40px; text-align:center;">
+              <p style="margin:0; font-size:11px; color:#555555; line-height:1.5;">
+                If you did not create an account with ACTDONE, 
+                <br>please disregard this message.
+              </p>
+              <p style="margin:20px 0 0 0; font-size:10px; color:#444444; letter-spacing:0.1em; text-transform:uppercase;">
+                © ${new Date().getFullYear()} ACTDONE. ALL RIGHTS RESERVED.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
 </html>`;
 }
 
@@ -188,17 +261,17 @@ function buildVerificationEmailText(verificationUrl) {
 ===================================================== */
 
 export async function sendVerificationEmail(toEmail, verificationUrl) {
-  const mailOptions = {
-    from: `"ACTDONE" <no-reply@actdone.app>`,
-    to: toEmail,
-    subject: 'Verify your email for ACTDONE',
-    text: buildVerificationEmailText(verificationUrl),
-    html: buildVerificationEmailHtml(verificationUrl),
-  };
-
   try {
+    const mailOptions = {
+      from: `"ACTDONE" <${env.smtpUser || 'no-reply@actdone.app'}>`,
+      to: toEmail,
+      subject: 'Verify your ACTDONE account',
+      text: buildVerificationEmailText(verificationUrl),
+      html: buildVerificationEmailHtml(verificationUrl),
+    };
+
     // DEVELOPMENT
-    if (process.env.NODE_ENV !== 'production') {
+    if (!env.isProduction) {
       const info = await devTransporter.sendMail(mailOptions);
       console.log('📧 DEV email captured in Mailtrap:', info.messageId);
       return;
@@ -206,8 +279,16 @@ export async function sendVerificationEmail(toEmail, verificationUrl) {
 
     // PRODUCTION
     if (!prodTransporter) {
-      console.warn('⚠️ Production email transporter not configured');
-      return;
+      // Re-initialize if first time
+      prodTransporter = nodemailer.createTransport({
+        host: env.smtpHost || 'smtp.gmail.com',
+        port: parseInt(env.smtpPort) || 465,
+        secure: parseInt(env.smtpPort) === 465, 
+        auth: {
+          user: env.smtpUser,
+          pass: env.smtpPass,
+        },
+      });
     }
 
     await prodTransporter.sendMail(mailOptions);
@@ -215,7 +296,6 @@ export async function sendVerificationEmail(toEmail, verificationUrl) {
 
   } catch (error) {
     console.error('Email sending failed:', error.message);
-    // ❗ NEVER throw — email must not break registration
   }
 }
  

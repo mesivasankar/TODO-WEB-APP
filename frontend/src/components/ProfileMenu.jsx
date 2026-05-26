@@ -1,8 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
+import ConfirmDialog from './ConfirmDialog';
 import styles from './ProfileMenu.module.css';
 import StatsDashboard from './StatsDashboard';
 
 const ProfileMenu = ({ user, theme, toggleTheme, onLogout, onClose, onUpdateUser }) => {
+  const [showConfirm, setShowConfirm] = useState(false);
   const menuRef = useRef(null);
   const inputRef = useRef(null);
   
@@ -10,16 +12,16 @@ const ProfileMenu = ({ user, theme, toggleTheme, onLogout, onClose, onUpdateUser
   const [editName, setEditName] = useState(user?.name || "");
   const [showStats, setShowStats] = useState(false);
 
-  // Close menu when clicking outside (Only if stats are NOT open)
+  // Close menu when clicking outside (Only if stats OR confirm dialog are NOT open)
   useEffect(() => {
     function handleClickOutside(event) {
-      if (menuRef.current && !menuRef.current.contains(event.target) && !showStats) {
+      if (menuRef.current && !menuRef.current.contains(event.target) && !showStats && !showConfirm) {
         onClose();
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => { document.removeEventListener("mousedown", handleClickOutside); };
-  }, [onClose, showStats]);
+  }, [onClose, showStats, showConfirm]);
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -109,13 +111,26 @@ const ProfileMenu = ({ user, theme, toggleTheme, onLogout, onClose, onUpdateUser
         <div className={styles.separator}></div>
 
         {/* Logout */}
-        <button className={styles.logoutButton} onClick={onLogout}>
+        <button className={styles.logoutButton} onClick={() => setShowConfirm(true)}>
           <span className={styles.menuIcon}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
           </span>
           <span>Log out</span>
         </button>
       </div>
+
+      {showConfirm && (
+        <ConfirmDialog
+          title="Confirm Logout"
+          message="Are you sure you want to log out?"
+          onConfirm={onLogout}
+          onCancel={() => setShowConfirm(false)}
+        />
+      )}
 
       {showStats && <StatsDashboard onClose={() => setShowStats(false)} />}
     </>

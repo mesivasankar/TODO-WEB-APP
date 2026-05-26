@@ -1,7 +1,9 @@
 import { Link, useNavigate } from "react-router-dom";
 import styles from "./LoginPage.module.css";
-import Logo from "../assets/Logo-light.png";
+import LogoLight from "../assets/Logo-light.png";
+import LogoDark from "../assets/Logo-dark.png";
 import useAuth from "../hooks/useAuth";
+import { useTheme } from "../contexts/ThemeContext";
 import { useState } from "react";
 
 
@@ -47,6 +49,9 @@ function validateNameLocal(name) {
 export default function RegisterPage() {
   const navigate = useNavigate();
   const { register } = useAuth();
+  const { theme } = useTheme();
+
+  const currentLogo = theme === 'light' ? LogoDark : LogoLight;
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -131,9 +136,9 @@ export default function RegisterPage() {
     <div className={styles.page}>
       <section className={styles.left}>
         <div className={styles.brandGroup}>
-          <img src={Logo} alt="Brand Logo" className={styles.logo} />
+          <img src={currentLogo} alt="Brand Logo" className={styles.logo} />
           <h1 className={styles.brandName}>ACTDONE</h1>
-          <p className={styles.tagline}>PLAN, ACT, GET IT DONE...</p>
+          <p className={styles.tagline}>Plan, Act, Get It Done...</p>
         </div>
 
         <div className={styles.copyright}>
@@ -144,7 +149,7 @@ export default function RegisterPage() {
       <div className={styles.verticalDivider}></div>
 
       <section className={styles.right}>
-        <form className={styles.form} onSubmit={handleSubmit}>
+        <form className={styles.form} onSubmit={handleSubmit} noValidate>
           {/* {error && <div className={styles.error}>{error}</div>} */}
 
           {/* <input

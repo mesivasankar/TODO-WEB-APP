@@ -4,7 +4,8 @@ import {
   createTaskListForUser, 
   renameTaskListForUser,
   reorderTaskListsForUser,
-  softDeleteTaskListForUser // <--- 🔥 IMPORT THIS
+  softDeleteTaskListForUser,
+  restoreTaskListForUser
 } from '../services/tasklists.service.js';
 
 export async function getTaskLists(req, res, next) {
@@ -117,10 +118,20 @@ export async function deleteTaskList(req, res, next) {
       return res.status(400).json({ message: 'Default list cannot be deleted.' });
     }
 
-    // 🔥 FIX: Use Soft Delete instead of permanent DELETE
     await softDeleteTaskListForUser(userId, listId);
 
     return res.json({ message: 'List archived successfully.' });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+export async function restoreTaskList(req, res, next) {
+  try {
+    const userId = req.user.id;
+    const listId = req.params.id;
+    await restoreTaskListForUser(userId, listId);
+    return res.json({ message: 'List restored successfully' });
   } catch (err) {
     return next(err);
   }

@@ -73,7 +73,13 @@
 .menuButton:hover { background-color: var(--surface-3); }
 .menuButtonActive { background-color: var(--surface-3); }
 .logoImage { height: 24px; }
-.appName { font-size: 18px; font-weight: 500; color: var(--text-primary); }
+.appName { 
+  font-family: 'Poppins', sans-serif;
+  font-size: 18px; 
+  font-weight: 500; 
+  color: var(--text-primary); 
+  letter-spacing: 2px;
+}
 .navRight { display: flex; align-items: center; }
 
 .profileAvatar {
@@ -101,7 +107,27 @@
   color: var(--text-primary);
 }
 
-/* ---------- RESPONSIVE OVERRIDES (Tab & Mobile) ---------- */
+.logoContainer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+@media (max-width: 1024px) {
+  .logoContainer {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    gap: 0;
+  }
+  .logoImage { display: none !important; }
+  .appName {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+    letter-spacing: 2.5px;
+    font-size: 16px;
+  }
+}
 
 @media (max-width: 1024px) {
   /* Fix sidebar position so it OVERLAYS content instead of pushing it */
@@ -141,7 +167,6 @@
 }
 
 @media (max-width: 480px) {
-  .appName { display: none; }
   .sidebarWrapper { width: 85% !important; }
   .sidebarClosed { width: 85% !important; transform: translateX(-100%); }
 }

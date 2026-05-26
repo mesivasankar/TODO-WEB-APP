@@ -13,12 +13,14 @@ import LogoDark from "../assets/Logo-dark.png";
 
 import useAuth from "../hooks/useAuth";
 import { useTheme } from "../contexts/ThemeContext"; 
+import { useToast } from "../contexts/ToastContext";
 import {
   getLists,
   createList, 
   renameListApi,
   deleteListApi,
   reorderLists,
+  restoreListApi,
 } from "../api/listsApi";
 
 export default function AppLayout() {
@@ -34,6 +36,7 @@ export default function AppLayout() {
 
   const { user, logout } = useAuth(); 
   const { theme, toggleTheme } = useTheme(); 
+  const { showUndoToast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -46,11 +49,34 @@ export default function AppLayout() {
     return saved ? new Set(JSON.parse(saved)) : new Set();
   });
 
-  const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : "?";
-  const currentLogo = theme === 'light' ? LogoDark : LogoLight;
+  // 🔥 NEW: System Theme Monitor (Ignores site theme for Logo)
+  const [isSystemDark, setIsSystemDark] = useState(() => 
+    window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+  );
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = (e) => setIsSystemDark(e.matches);
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
+
+  const currentLogo = isSystemDark ? LogoLight : LogoDark;
+
+  // 🔥 STRICT FIX: Ensure NO "?" ever appears. Fallback to 'A' (Actdone) if name/email are missing during sync.
+  const userInitial = (user?.name?.trim() || user?.email?.trim() || "A").charAt(0).toUpperCase();
+
+  // 🔥 NEW: Dynamic Favicon Switcher (Strictly System Based)
+  useEffect(() => {
+    const favicon = document.getElementById("favicon");
+    if (favicon) {
+      favicon.href = currentLogo;
+    }
+  }, [currentLogo]);
 
   useKeyboardShortcuts([
     { key: "l", ctrlCmd: true, action: () => setIsCreateModalOpen(true) },
+    { key: "k", ctrlCmd: true, action: () => setIsSearchOpen(true) },
     { key: "d", ctrlCmd: true, action: () => toggleTheme(theme === 'dark' ? 'light' : 'dark') },
     { key: "?", shift: true, action: () => setIsCheatSheetOpen(true), allowInInput: false },
     { key: "Escape", action: () => {
@@ -155,6 +181,7 @@ export default function AppLayout() {
   async function handleDeleteList(listId) {
     const listToDelete = lists.find((l) => l.id === listId);
     if (!listToDelete || listToDelete.is_default === true) return;
+
     const currentIndex = lists.findIndex((l) => l.id === listId);
     let nextActiveId = activeListId;
     if (activeListId === listId) {
@@ -162,6 +189,10 @@ export default function AppLayout() {
       const nextIndex = currentIndex > 0 ? currentIndex - 1 : 0;
       nextActiveId = remainingLists[nextIndex]?.id || null;
     }
+
+    const wasSelected = selectedListIds.has(listId);
+
+    // Optimistic UI updates
     setLists((prev) => prev.filter((l) => l.id !== listId));
     setSelectedListIds((prev) => {
       const next = new Set(prev);
@@ -169,7 +200,64 @@ export default function AppLayout() {
       return next;
     });
     if (nextActiveId) setActiveListId(nextActiveId);
-    try { await deleteListApi(listId); } catch (err) { console.error(err); }
+
+    try {
+      await deleteListApi(listId);
+      
+      showUndoToast(`List "${listToDelete.name}" deleted`, async () => {
+        // Undo Callback: Restore locally
+        setLists((prev) => {
+          const next = [...prev];
+          next.splice(currentIndex, 0, listToDelete);
+          return next;
+        });
+        if (wasSelected) {
+          setSelectedListIds((prev) => {
+            const next = new Set(prev);
+            next.add(listId);
+            return next;
+          });
+        }
+        if (activeListId === listId) {
+          setActiveListId(listId);
+        }
+
+        // Restore in DB
+        try {
+          await restoreListApi(listId);
+        } catch (err) {
+          console.error("Failed to restore list", err);
+          // Rollback state if restore fails
+          setLists((prev) => prev.filter((l) => l.id !== listId));
+          setSelectedListIds((prev) => {
+            const next = new Set(prev);
+            next.delete(listId);
+            return next;
+          });
+          if (activeListId === listId && nextActiveId) {
+            setActiveListId(nextActiveId);
+          }
+        }
+      });
+    } catch (err) {
+      console.error("Failed to delete list", err);
+      // Revert optimistic delete if API fails
+      setLists((prev) => {
+        const next = [...prev];
+        next.splice(currentIndex, 0, listToDelete);
+        return next;
+      });
+      if (wasSelected) {
+        setSelectedListIds((prev) => {
+          const next = new Set(prev);
+          next.add(listId);
+          return next;
+        });
+      }
+      if (activeListId === listId) {
+        setActiveListId(listId);
+      }
+    }
   }
 
   async function handleReorderLists(newLists) {
@@ -177,21 +265,31 @@ export default function AppLayout() {
     try { await reorderLists(newLists.map(l => l.id)); } catch(err) { console.error(err); }
   }
 
-  const handleLogout = () => { logout(); navigate("/login"); };
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (err) {
+      console.error('Logout failed', err);
+    } finally {
+      navigate('/login');
+    }
+  };
 
   return (
     <div className={styles.appContainer}>
       <header className={styles.navbar}>
         <div className={styles.navLeft}>
           <button className={`${styles.menuButton} ${!isSidebarOpen ? styles.menuButtonActive : ''}`} onClick={() => setIsSidebarOpen((p) => !p)}>☰</button>
-          <img src={currentLogo} alt="Actdone" className={styles.logoImage} />
-          <span className={styles.appName}>Actdone</span>
+          <div className={styles.logoContainer}>
+            <img src={currentLogo} alt="Actdone" className={styles.logoImage} />
+            <span className={styles.appName}>ACTDONE</span>
+          </div>
         </div>
         <div className={styles.navRight} style={{ position: 'relative', display: 'flex', gap: '16px', alignItems: 'center' }}>
-           <button className={styles.searchNavBtn} onClick={() => setIsSearchOpen(true)} title="Search">
+           <button className={styles.searchNavBtn} onClick={() => setIsSearchOpen(true)} title="Search" id="search-btn">
              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
            </button>
-           <button className={styles.profileAvatar} onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}>{userInitial}</button>
+           <button className={styles.profileAvatar} onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)} id="avatar-btn">{userInitial}</button>
            {isProfileMenuOpen && (
              <ProfileMenu user={user} theme={theme} toggleTheme={toggleTheme} onLogout={handleLogout} onClose={() => setIsProfileMenuOpen(false)} />
            )}

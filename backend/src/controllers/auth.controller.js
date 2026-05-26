@@ -150,8 +150,8 @@ export async function googleAuthCallback(req, res, next) {
 
     res.cookie('access_token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: env.isProduction,
+      sameSite: env.isProduction ? 'none' : 'lax',
       maxAge: AUTH_COOKIE_MAX_AGE
     });
 
@@ -336,8 +336,8 @@ export async function login(req, res, next) {
 
     res.cookie('access_token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: env.isProduction,
+      sameSite: env.isProduction ? 'none' : 'lax',
       maxAge: AUTH_COOKIE_MAX_AGE,
       expiresIn: '7d'
     });
@@ -360,8 +360,8 @@ export async function login(req, res, next) {
 export function logout(req, res) {
   res.clearCookie('access_token', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: env.isProduction,
+    sameSite: env.isProduction ? 'none' : 'lax',
   });
   return res.json({ message: 'Logged out successfully' });
 }

@@ -1,0 +1,122 @@
+/* ── Overlay ── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 100000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: fadeIn 0.2s ease;
+}
+
+/* ── Card ── */
+.card {
+  width: 90%;
+  max-width: 380px;
+  background-color: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: scaleUp 0.2s cubic-bezier(0.2, 0, 0.2, 1);
+  outline: none;
+}
+
+/* ── Header ── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.title {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+/* ── Body ── */
+.body {
+  padding: 24px 24px 12px;
+}
+
+.message {
+  margin: 0;
+  font-size: 16px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+/* ── Actions ── */
+.actions {
+  display: flex;
+  gap: 12px;
+  padding: 16px 24px 24px;
+}
+
+.btnYes,
+.btnNo {
+  flex: 1;
+  padding: 12px 0;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* "No" - Secondary/Safe option */
+.btnNo {
+  background-color: var(--surface-3);
+  color: var(--text-primary);
+}
+
+.btnNo:hover {
+  background-color: var(--surface-4);
+  transform: translateY(-1px);
+}
+
+.btnNo:active {
+  transform: translateY(0);
+}
+
+/* "Yes" - Primary/Destructive option */
+.btnYes {
+  background-color: #e74c3c;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.2);
+}
+
+.btnYes:hover {
+  background-color: #c0392b;
+  box-shadow: 0 6px 16px rgba(231, 76, 60, 0.3);
+  transform: translateY(-1px);
+}
+
+.btnYes:active {
+  transform: translateY(0);
+}
+
+/* ── Animations ── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes scaleUp {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}

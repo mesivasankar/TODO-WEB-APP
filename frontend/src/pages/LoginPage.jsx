@@ -1,14 +1,19 @@
 import { Link } from "react-router-dom";
 import styles from "./LoginPage.module.css";
-import Logo from "../assets/Logo-light.png";
+import LogoLight from "../assets/Logo-light.png";
+import LogoDark from "../assets/Logo-dark.png";
 import { useNavigate } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
+import { useTheme } from "../contexts/ThemeContext";
 import { useState } from "react";
 
 export default function LoginPage() {
 
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { theme } = useTheme();
+
+  const currentLogo = theme === 'light' ? LogoDark : LogoLight;
 
   const [email, setEmail] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -16,11 +21,25 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const validateEmail = (email) => {
+    if (!email) return "Email is required.";
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      return "Please enter a valid email address.";
+    }
+    return "";
+  };
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
     setLoading(true);
+
+    const emailError = validateEmail(email);
+    if (emailError) {
+      setError(emailError);
+      setLoading(false);
+      return;
+    }
 
     try {
       await login(email, password);
@@ -49,13 +68,13 @@ export default function LoginPage() {
       <section className={styles.left}>
         <div className={styles.brandGroup}>
           <img
-            src={Logo}
+            src={currentLogo}
             alt="Brand Logo"
             className={styles.logo}
           />
           <h1 className={styles.brandName}>ACTDONE</h1>
           <p className={styles.tagline}>
-            PLAN, ACT, GET IT DONE...
+            Plan, Act, Get It Done...
           </p>
         </div>
 
@@ -67,27 +86,31 @@ export default function LoginPage() {
       <div className={styles.verticalDivider}></div>
 
       <section className={styles.right}>
-        <form className={styles.form} onSubmit={handleSubmit}>
+        <form className={styles.form} onSubmit={handleSubmit} noValidate>
           {/* <h2 className={styles.formTitle}>Log in</h2> */}
           {error && <div className={styles.error}>{error}</div>}
 
           <input
             type="email"
             placeholder="Email"
-            required
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className={styles.input}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              if (error) setError("");
+            }}
+            className={`${styles.input} ${error ? styles.inputError : ""}`}
           />
 
           <div className={styles.passwordWrapper}>
             <input
               type={showPassword ? "text" : "password"}
               placeholder="Password"
-              required
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className={styles.input}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (error) setError("");
+              }}
+              className={`${styles.input} ${error ? styles.inputError : ""}`}
             />
 
 

@@ -38,3 +38,10 @@ export async function deleteListApi(listId) {
     method: "DELETE",
   });
 }
+
+// 🔥 NEW: Restore API call
+export async function restoreListApi(listId) {
+  await apiRequest(`/api/lists/${listId}/restore`, {
+    method: "POST",
+  });
+}

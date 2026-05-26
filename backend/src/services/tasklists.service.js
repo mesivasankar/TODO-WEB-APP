@@ -111,22 +111,65 @@ export async function softDeleteTaskListForUser(userId, listId) {
   try {
     await client.query('BEGIN');
 
-    // 1. Mark the LIST as deleted
+    // 1. Mark the LIST as deleted and get the exact timestamp
     const listQuery = `
       UPDATE task_lists 
       SET deleted_at = NOW(), updated_at = NOW()
       WHERE id = $1 AND user_id = $2
+      RETURNING deleted_at
+    `;
+    const listRes = await client.query(listQuery, [listId, userId]);
+    const deletedAt = listRes.rows[0]?.deleted_at;
+
+    if (deletedAt) {
+      // 2. Mark only active TASKS in that list as deleted with the exact same timestamp
+      const tasksQuery = `
+        UPDATE tasks 
+        SET deleted_at = $1, updated_at = NOW()
+        WHERE list_id = $2 AND user_id = $3 AND deleted_at IS NULL
+      `;
+      await client.query(tasksQuery, [deletedAt, listId, userId]);
+    }
+
+    await client.query('COMMIT');
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
+// 🔥 NEW: RESTORE FUNCTION FOR UNDO OPERATIONS
+export async function restoreTaskListForUser(userId, listId) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // 1. Fetch the deleted_at timestamp first
+    const selectQuery = `
+      SELECT deleted_at FROM task_lists WHERE id = $1 AND user_id = $2
+    `;
+    const selectRes = await client.query(selectQuery, [listId, userId]);
+    const deletedAt = selectRes.rows[0]?.deleted_at;
+
+    if (deletedAt) {
+      // 2. Restore all TASKS in that list that were active before (matching deleted_at)
+      const tasksQuery = `
+        UPDATE tasks 
+        SET deleted_at = NULL, updated_at = NOW()
+        WHERE list_id = $1 AND user_id = $2 AND deleted_at = $3
+      `;
+      await client.query(tasksQuery, [listId, userId, deletedAt]);
+    }
+
+    // 3. Restore the LIST by setting deleted_at = NULL
+    const listQuery = `
+      UPDATE task_lists 
+      SET deleted_at = NULL, updated_at = NOW()
+      WHERE id = $1 AND user_id = $2
     `;
     await client.query(listQuery, [listId, userId]);
-
-    // 2. Mark all TASKS in that list as deleted (so they disappear from "All Tasks")
-    // Note: We do NOT delete them permanently, so analytics still work!
-    const tasksQuery = `
-      UPDATE tasks 
-      SET deleted_at = NOW(), updated_at = NOW()
-      WHERE list_id = $1 AND user_id = $2
-    `;
-    await client.query(tasksQuery, [listId, userId]);
 
     await client.query('COMMIT');
   } catch (e) {

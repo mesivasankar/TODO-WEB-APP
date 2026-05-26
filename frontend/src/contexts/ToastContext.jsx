@@ -93,14 +93,16 @@ export function ToastProvider({ children }) {
         <div className={styles.toastContainer}>
           <div className={styles.toastContent}>
             <span className={styles.message}>{toast.message}</span>
-            <button 
-              className={styles.undoBtn} 
-              onClick={handleUndo}
-              disabled={isUndoing} 
-              style={{ opacity: isUndoing ? 0.5 : 1, cursor: isUndoing ? 'default' : 'pointer' }} 
-            >
-              {isUndoing ? "Restoring..." : "Undo"}
-            </button>
+            {toast.onUndo && (
+              <button 
+                className={styles.undoBtn} 
+                onClick={handleUndo}
+                disabled={isUndoing} 
+                style={{ opacity: isUndoing ? 0.5 : 1, cursor: isUndoing ? 'default' : 'pointer' }} 
+              >
+                {isUndoing ? "Restoring..." : "Undo"}
+              </button>
+            )}
             <button 
               className={styles.closeBtn} 
               onClick={closeToast}

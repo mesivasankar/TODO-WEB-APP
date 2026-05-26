@@ -3,10 +3,16 @@ import { createContext, useContext, useEffect, useState } from "react";
 const ThemeContext = createContext();
 
 export function ThemeProvider({ children }) {
-  // 1. Initialize from localStorage or default to 'dark'
+  // 1. Initialize from localStorage or default to system preference
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem("app-theme");
-    return saved || "dark"; // Default to dark if nothing saved
+    if (saved) return saved;
+    
+    // Check browser system preference
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+      return "light";
+    }
+    return "dark"; // Default to dark for most systems
   });
 
   // 2. Apply theme to document body whenever it changes

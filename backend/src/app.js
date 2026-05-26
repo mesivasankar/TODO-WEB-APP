@@ -8,19 +8,36 @@ import { pool } from './config/db.js';
 import authRoutes from './routes/auth.routes.js';
 import taskListRoutes from './routes/tasklists.routes.js';
 import tasksRoutes from './routes/tasks.routes.js';
-import focusRoutes from './routes/focus.routes.js'; // 🔥 Ensure this import is active
+
 import analyticsRoutes from './routes/analytics.routes.js';
 import { errorHandler } from './middleware/error.middleware.js';
 import googleLimiter from './middleware/googleLimiter.middleware.js';
 import aiRoutes from './routes/ai.routes.js';
 import matrixRoutes from './routes/matrix.routes.js';
+import focusRoutes from './routes/focus.routes.js';
 
 const app = express();
 
-const corsOptions = {
-  origin: env.clientUrl,
+const allowedOrigins = [
+  env.clientUrl,
+  'http://localhost:5173',
+  'http://127.0.0.1:5173'
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1 || env.isProduction) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
-};
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, 
@@ -43,10 +60,8 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
 }));
 
-app.use(cors(corsOptions));
 app.use(express.json({ limit: '1mb' })); 
 app.use(cookieParser());
-app.use(express.json());
 
 app.get('/health', async (req, res, next) => {
   try {
@@ -78,12 +93,12 @@ app.use('/api/tasks', tasksRoutes);               // For direct task actions (up
 
 app.use('/api/ai', aiRoutes);
 
-// 🔥 FOCUS MODE ROUTE ENABLED
-app.use('/api/focus', focusRoutes);
+
 
 app.use('/api/analytics', analyticsRoutes);
 
 app.use('/api/matrix', matrixRoutes);
+app.use('/api/focus', focusRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);

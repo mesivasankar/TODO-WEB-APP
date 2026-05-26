@@ -34,9 +34,11 @@
 
 .brandName {
   color: var(--text-primary);
+  font-family: 'Poppins', sans-serif;
   font-size: 32px;
-  font-weight: 600;
+  font-weight: 500;
   margin-bottom: 8px;
+  letter-spacing: 3px;
 }
 
 .tagline {
@@ -59,8 +61,12 @@
 }
 
 
-.error{
+.error {
   color: var(--err-msg);
+  font-size: 14px;
+  text-align: left;
+  margin-bottom: 8px;
+  font-weight: 500;
 }
 
 .input {
@@ -293,7 +299,7 @@
 
 
   .left {
-    padding-top: 24px;    /* reduce top space */
+    padding-top: 80px;    /* Lower the logo to reduce excessive gap between logo and form */
     padding-bottom: 8px;  /* reduce bottom space */
     flex: unset;
   }

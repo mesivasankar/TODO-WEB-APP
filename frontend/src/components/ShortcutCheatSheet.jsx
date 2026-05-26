@@ -6,6 +6,7 @@ export default function ShortcutCheatSheet({ isOpen, onClose }) {
 
   const shortcuts = [
     { keys: ["Ctrl", "L"], desc: "Create a new List" },
+    { keys: ["Ctrl", "K"], desc: "Global Search" },
     { keys: ["Ctrl", "D"], desc: "Toggle Dark/Light Mode" },
     { keys: ["Shift", "?"], desc: "Show Keyboard Shortcuts" },
     { keys: ["Esc"], desc: "Close any Modal" },

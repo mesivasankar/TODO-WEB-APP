@@ -6,6 +6,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext'; // Import this
 import { ThemeProvider } from './contexts/ThemeContext'; // Import this
+import { FocusModeProvider } from './contexts/FocusModeContext';
 import './styles/global.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -14,9 +15,11 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <AuthProvider>
         <ToastProvider>       {/* Wrap here */}
           <ThemeProvider>     {/* Wrap here */}
-            <BrowserRouter>
-              <App />
-            </BrowserRouter>
+            <FocusModeProvider>
+              <BrowserRouter>
+                <App />
+              </BrowserRouter>
+            </FocusModeProvider>
           </ThemeProvider>
         </ToastProvider>
       </AuthProvider>

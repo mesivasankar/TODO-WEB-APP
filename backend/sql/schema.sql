@@ -98,3 +98,17 @@ ALTER COLUMN password_hash DROP NOT NULL;
 -- A column to identify default lists:
 ALTER TABLE task_lists
 ADD COLUMN is_default BOOLEAN DEFAULT FALSE;
+
+
+-- FOCUS MODE SESSIONS TABLE
+CREATE TABLE IF NOT EXISTS focus_sessions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  task_id UUID REFERENCES tasks(id) ON DELETE SET NULL,
+  start_time TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  expected_end_time TIMESTAMPTZ NOT NULL,
+  actual_end_time TIMESTAMPTZ,
+  minutes_focused INT NOT NULL DEFAULT 0,
+  status VARCHAR(20) NOT NULL DEFAULT 'RUNNING',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

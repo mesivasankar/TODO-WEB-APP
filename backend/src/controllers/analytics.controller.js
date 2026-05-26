@@ -5,9 +5,8 @@ export async function getAnalytics(req, res, next) {
     const userId = req.user.id;
     
     // 1. Heatmap Data
-    // Counts ALL completed tasks, even if deleted later (history preservation)
     const heatmapQuery = `
-      SELECT to_char(completed_at, 'YYYY-MM-DD') as date, COUNT(*) as count
+      SELECT to_char(timezone('Asia/Kolkata', completed_at), 'YYYY-MM-DD') as date, COUNT(*) as count
       FROM tasks
       WHERE user_id = $1 
       AND is_completed = true 
@@ -22,9 +21,9 @@ export async function getAnalytics(req, res, next) {
       level: Math.min(4, Math.ceil(parseInt(r.count) / 2))
     }));
 
-    // 2. Peak Flow Data
+    // 2. Peak Flow Data (Adjusted for local timezone)
     const peakFlowQuery = `
-      SELECT EXTRACT(HOUR FROM completed_at) as hour, COUNT(*) as count
+      SELECT EXTRACT(HOUR FROM timezone('Asia/Kolkata', completed_at)) as hour, COUNT(*) as count
       FROM tasks
       WHERE user_id = $1 AND is_completed = true
       GROUP BY hour
@@ -37,20 +36,7 @@ export async function getAnalytics(req, res, next) {
         return { hour: i, count: found ? parseInt(found.count) : 0 };
     });
 
-    // 3. Focus Stats
-    const focusStatsQuery = `
-      SELECT 
-        COUNT(*) as total_sessions, 
-        COALESCE(SUM(duration_seconds), 0) as total_seconds
-      FROM focus_sessions
-      WHERE user_id = $1
-    `;
-    const focusRes = await pool.query(focusStatsQuery, [userId]);
-    
-    const realSessions = parseInt(focusRes.rows[0].total_sessions);
-    const realSeconds = parseInt(focusRes.rows[0].total_seconds);
-
-    // 4. Category Distribution
+    // 3. Category Distribution
     const categoryQuery = `
       SELECT category, COUNT(*) as count
       FROM tasks 
@@ -81,8 +67,6 @@ export async function getAnalytics(req, res, next) {
     return res.json({
         heatmap,
         peakFlow,
-        totalSessions: realSessions,  
-        totalMinutes: Math.round(realSeconds / 60),
         distribution 
     });
 
