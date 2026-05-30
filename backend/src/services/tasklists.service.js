@@ -8,6 +8,7 @@ export async function getTaskListsForUser(userId) {
       sort_order,
       is_default,
       category,
+      task_sort_option,
       created_at,
       updated_at
     FROM task_lists
@@ -33,6 +34,7 @@ export async function createTaskListForUser(userId, name, category = 'OTHERS') {
         sort_order,
         is_default,
         category,
+        task_sort_option,
         created_at,
         updated_at
     `,
@@ -57,6 +59,7 @@ export async function renameTaskListForUser(userId, listId, newName) {
         sort_order,
         is_default,
         category,
+        task_sort_option,
         created_at,
         updated_at
     `,
@@ -125,4 +128,23 @@ export async function restoreTaskListForUser(userId, listId) {
     WHERE list_id = $1 AND user_id = $2 AND deleted_at = (SELECT deleted_at FROM old_list)
   `;
   await pool.query(query, [listId, userId]);
+}
+
+export async function updateTaskListSortOption(userId, listId, sortOption) {
+  const updateResult = await pool.query(
+    `
+      UPDATE task_lists
+      SET task_sort_option = $1,
+          updated_at = NOW()
+      WHERE id = $2
+        AND user_id = $3
+      RETURNING
+        id,
+        task_sort_option,
+        updated_at
+    `,
+    [sortOption, listId, userId]
+  );
+
+  return updateResult.rows[0] || null;
 }

@@ -57,21 +57,19 @@ async function runIndexMigration(dbName, connectionString) {
 }
 
 async function main() {
-  const localUrl = "postgres://postgres:7826940949@localhost:5432/actdone_local";
-  const neonUrl = "postgresql://neondb_owner:npg_DHgcFpI3W8fV@ep-divine-mud-a48myvyt-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require";
+  // Load connection string dynamically from environment to prevent credentials leakage
+  const dbUrl = process.env.DATABASE_URL || env.dbUrl;
 
-  // 1. Run local
-  try {
-    await runIndexMigration("Local Development Database", localUrl);
-  } catch (e) {
-    console.error(e);
+  if (!dbUrl) {
+    console.error("❌ ERROR: DATABASE_URL environment variable is not defined.");
+    process.exit(1);
   }
 
-  // 2. Run production Neon
   try {
-    await runIndexMigration("Neon Production Database", neonUrl);
+    const dbName = dbUrl.includes('neon.tech') ? "Neon Production Database" : "Local Development Database";
+    await runIndexMigration(dbName, dbUrl);
   } catch (e) {
-    console.error(e);
+    console.error("Migration failed:", e);
   }
   
   console.log("\n⚡ Migration runner finished!");

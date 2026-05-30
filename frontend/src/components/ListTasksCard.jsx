@@ -43,7 +43,8 @@ import {
   DndContext,
   closestCenter,
   KeyboardSensor,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   DragOverlay,
@@ -143,6 +144,14 @@ const SparklesIcon = () => (
 const ChevronIcon = ({ isCollapsed }) => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transition: 'transform 0.2s', transform: isCollapsed ? 'rotate(-90deg)' : 'none' }}>
     <polyline points="6 9 12 15 18 9"></polyline>
+  </svg>
+);
+
+const SortIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="4" y1="6" x2="20" y2="6"></line>
+    <line x1="4" y1="12" x2="14" y2="12"></line>
+    <line x1="4" y1="18" x2="8" y2="18"></line>
   </svg>
 );
 
@@ -265,7 +274,7 @@ const RecurrencePill = ({ value, onClear }) => { if (!value) return null; return
 
 /* ================= MAIN COMPONENT ================= */
 
-export default function ListTasksCard({ list, onRenameList, onDeleteList, isSingleView, onCountUpdate, isStarredMode = false, isTodayMode = false, isUpcomingMode = false, isOverdueMode = false, defaultListId = null, dragHandleProps }) {
+export default function ListTasksCard({ list, onRenameList, onDeleteList, isSingleView, onCountUpdate, isStarredMode = false, isTodayMode = false, isUpcomingMode = false, isOverdueMode = false, defaultListId = null, dragHandleProps, onSortList }) {
   const shouldRender = list || isStarredMode || isTodayMode || isUpcomingMode || isOverdueMode;
   if (!shouldRender) return null;
 
@@ -286,9 +295,16 @@ export default function ListTasksCard({ list, onRenameList, onDeleteList, isSing
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerTask, setDrawerTask] = useState(null);
   const [aiQuota, setAiQuota] = useState(null);
+  const [sortMenuOpen, setSortMenuOpen] = useState(false);
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+  
   const listMenuRef = useRef(null);
+  const sortMenuRef = useRef(null);
   const taskMenuRef = useRef(null);
   const titleRef = useRef(null);
   const detailsRef = useRef(null);
@@ -368,6 +384,7 @@ export default function ListTasksCard({ list, onRenameList, onDeleteList, isSing
   useEffect(() => {
     function handleClickOutside(e) {
       if (listMenuRef.current && !listMenuRef.current.contains(e.target)) setListMenuOpen(false);
+      if (sortMenuRef.current && !sortMenuRef.current.contains(e.target)) setSortMenuOpen(false);
       if (taskMenuRef.current && !taskMenuRef.current.contains(e.target)) setOpenMenuTaskId(null);
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -786,7 +803,8 @@ export default function ListTasksCard({ list, onRenameList, onDeleteList, isSing
       </div>
     );
     if (isOverlay) return content;
-    const isDragDisabled = isTodayMode || isUpcomingMode || isOverdueMode || isVirtual;
+    const listSortOption = list?.task_sort_option || 'MY_ORDER';
+    const isDragDisabled = isTodayMode || isUpcomingMode || isOverdueMode || isVirtual || listSortOption !== 'MY_ORDER';
     if (!task.is_completed && !isStarredMode && !isDragDisabled) {
       return <SortableTaskWrapper key={task.clientKey || task.id} task={task} items={items}>{content}</SortableTaskWrapper>;
     } else {
@@ -857,15 +875,31 @@ export default function ListTasksCard({ list, onRenameList, onDeleteList, isSing
               <CategoryBadge category={list.category} />
             )}
           </div>
-          {showListMenu && (
-            <div className={styles.menuWrapper} ref={listMenuRef} onPointerDown={(e) => e.stopPropagation()}>
-              <button className={styles.menuButton} onClick={() => setListMenuOpen(p => !p)}>⋮</button>
-              <div className={`${styles.dropdown} ${listMenuOpen ? styles.dropdownOpen : ""}`} style={{ right: 0, top: '100%' }}>
-                <button className={styles.menuItem} onClick={() => { setListMenuOpen(false); setRenameOpen(true); }}>Rename list</button>
-                {!isDefaultList ? <button className={`${styles.menuItem} ${styles.danger}`} onClick={() => onDeleteList(list.id)} title="Delete List"><span className={styles.menuIconWrapper}><TrashIcon /></span> Delete list</button> : <div className={styles.disabledWrapper}><div className={styles.disabledItem}>Delete list</div><div className={styles.helperText}>Default list cant be deleted</div></div>}
+          <div className={styles.headerControls}>
+            {!isSpecialMode && list && (
+              <div className={styles.menuWrapper} ref={sortMenuRef} onPointerDown={(e) => e.stopPropagation()}>
+                <button className={styles.sortButton} onClick={() => setSortMenuOpen(p => !p)} title="Sort Tasks">
+                  <SortIcon />
+                </button>
+                <div className={`${styles.dropdown} ${sortMenuOpen ? styles.dropdownOpen : ""}`} style={{ right: 0, top: '100%' }}>
+                  <div className={styles.dropdownHeader}>Sort by</div>
+                  <button className={`${styles.menuItem} ${list.task_sort_option === 'MY_ORDER' || !list.task_sort_option ? styles.activeSortItem : ""}`} onClick={async () => { setSortMenuOpen(false); if (onSortList) { await onSortList(list.id, 'MY_ORDER'); loadTasks(); } }}>My Order</button>
+                  <button className={`${styles.menuItem} ${list.task_sort_option === 'DATE_CREATED' ? styles.activeSortItem : ""}`} onClick={async () => { setSortMenuOpen(false); if (onSortList) { await onSortList(list.id, 'DATE_CREATED'); loadTasks(); } }}>Date Created</button>
+                  <button className={`${styles.menuItem} ${list.task_sort_option === 'TITLE' ? styles.activeSortItem : ""}`} onClick={async () => { setSortMenuOpen(false); if (onSortList) { await onSortList(list.id, 'TITLE'); loadTasks(); } }}>Title</button>
+                  <button className={`${styles.menuItem} ${list.task_sort_option === 'DUE_DATE' ? styles.activeSortItem : ""}`} onClick={async () => { setSortMenuOpen(false); if (onSortList) { await onSortList(list.id, 'DUE_DATE'); loadTasks(); } }}>Due Date</button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+            {showListMenu && (
+              <div className={styles.menuWrapper} ref={listMenuRef} onPointerDown={(e) => e.stopPropagation()}>
+                <button className={styles.menuButton} onClick={() => setListMenuOpen(p => !p)}>⋮</button>
+                <div className={`${styles.dropdown} ${listMenuOpen ? styles.dropdownOpen : ""}`} style={{ right: 0, top: '100%' }}>
+                  <button className={styles.menuItem} onClick={() => { setListMenuOpen(false); setRenameOpen(true); }}>Rename list</button>
+                  {!isDefaultList ? <button className={`${styles.menuItem} ${styles.danger}`} onClick={() => onDeleteList(list.id)} title="Delete List"><span className={styles.menuIconWrapper}><TrashIcon /></span> Delete list</button> : <div className={styles.disabledWrapper}><div className={styles.disabledItem}>Delete list</div><div className={styles.helperText}>Default list cant be deleted</div></div>}
+                </div>
+              </div>
+            )}
+          </div>
         </header>
 
         <div className={styles.contentWrapper}>

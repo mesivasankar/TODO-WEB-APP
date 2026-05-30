@@ -1,6 +1,23 @@
 import { pool } from '../config/db.js';
 
 export async function getTasksForList(userId, listId) {
+  // First, retrieve the task_sort_option for this list to ensure correct ordering
+  const listResult = await pool.query(
+    `SELECT task_sort_option FROM task_lists WHERE id = $1 AND user_id = $2 LIMIT 1`,
+    [listId, userId]
+  );
+  
+  const sortOption = listResult.rows[0]?.task_sort_option || 'MY_ORDER';
+  
+  let orderByClause = 'ORDER BY sort_order ASC, created_at ASC';
+  if (sortOption === 'DATE_CREATED') {
+    orderByClause = 'ORDER BY created_at DESC';
+  } else if (sortOption === 'TITLE') {
+    orderByClause = 'ORDER BY LOWER(title) ASC';
+  } else if (sortOption === 'DUE_DATE') {
+    orderByClause = 'ORDER BY due_date ASC NULLS LAST, created_at ASC';
+  }
+
   const query = `
     SELECT
       id, user_id, list_id, parent_task_id, title, description,
@@ -8,7 +25,7 @@ export async function getTasksForList(userId, listId) {
       category, deleted_at, completed_at, created_at, updated_at
     FROM tasks
     WHERE user_id = $1 AND list_id = $2 AND deleted_at IS NULL
-    ORDER BY sort_order ASC, created_at ASC
+    ${orderByClause}
   `;
   const { rows } = await pool.query(query, [userId, listId]);
   return rows;

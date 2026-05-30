@@ -165,6 +165,9 @@ if (env.isProduction) {
       user: env.smtpUser,
       pass: env.smtpPass,
     },
+    connectionTimeout: 5000, // 5 seconds
+    greetingTimeout: 5000,   // 5 seconds
+    socketTimeout: 10000,    // 10 seconds
   });
 }
 
@@ -288,6 +291,9 @@ export async function sendVerificationEmail(toEmail, verificationUrl) {
           user: env.smtpUser,
           pass: env.smtpPass,
         },
+        connectionTimeout: 5000, // 5 seconds
+        greetingTimeout: 5000,   // 5 seconds
+        socketTimeout: 10000,    // 10 seconds
       });
     }
 

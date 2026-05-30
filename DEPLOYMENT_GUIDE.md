@@ -21,8 +21,8 @@ This guide describes how to deploy the **Actdone** Todo & Productivity applicati
 
 ## 🐘 Step 1: Prepare Your Neon Database
 
-Your Neon production database is already fully set up and optimized with all structural indexes. The connection string is:
-`postgresql://neondb_owner:npg_DHgcFpI3W8fV@ep-divine-mud-a48myvyt-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require`
+Your Neon production database is already fully set up and optimized with all structural indexes. The connection string format is:
+`postgresql://neondb_owner:<YOUR_PASSWORD>@ep-divine-mud-a48myvyt-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require`
 
 ---
 
@@ -49,9 +49,9 @@ Your Neon production database is already fully set up and optimized with all str
    | --- | --- | --- |
    | `NODE_ENV` | `production` | Enables Express production optimizations. |
    | `PORT` | `3000` | Port Render binds your API to. |
-   | `DATABASE_URL` | `postgresql://neondb_owner:npg_DHgcFpI3W8fV@ep-divine-mud-a48myvyt-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require` | Your Neon database string. |
-   | `JWT_SECRET` | `TjMwM2Y4YjY5Y2EyZDc1ODZkMWY1NzFhNA==` | Secure secret used to sign JWT cookies. |
-   | `GEMINI_API_KEY` | `AIzaSyBgGRspkVVZ2Moj-pMVG6wfrXivFsXBrOg` | Your Google Gemini API Key. |
+   | `DATABASE_URL` | *Your Neon database string (e.g. `postgresql://...`)* | Your Neon database string. |
+   | `JWT_SECRET` | *Your Secure Random JWT Secret (e.g. `TjM...`)* | Secure secret used to sign JWT cookies. |
+   | `GEMINI_API_KEY` | *Your Google Gemini API Key (e.g. `AIz...`)* | Your Google Gemini API Key. |
    | `CLIENT_URL` | *Your Vercel URL (e.g. `https://actdone.vercel.app`)* | You will update this value *after* deploying the frontend in Step 3. |
    | `APP_BASE_URL` | *Your Deployed Render URL (e.g. `https://actdone-api.onrender.com`)* | Your API server's domain. |
 

@@ -1231,3 +1231,47 @@
   height: 10px;
   width: 25%;
 }
+
+.sortButton {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+}
+
+.sortButton:hover {
+  background: var(--surface-3);
+  color: var(--text-primary);
+}
+
+.headerControls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dropdownHeader {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  padding: 6px 12px 4px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+  font-weight: 600;
+  width: 100%;
+}
+
+.activeSortItem {
+  color: var(--primary, #3b82f6) !important;
+  font-weight: 600;
+  background-color: var(--surface-3);
+}

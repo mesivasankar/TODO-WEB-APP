@@ -45,3 +45,13 @@ export async function restoreListApi(listId) {
     method: "POST",
   });
 }
+
+// 🔥 NEW: Update List Sort Option API call
+export async function updateListSortApi(listId, sortOption) {
+  const response = await apiRequest(`/api/lists/${listId}/sort`, {
+    method: "PATCH",
+    body: JSON.stringify({ sortOption }),
+  });
+  const data = await response.json();
+  return data.list;
+}

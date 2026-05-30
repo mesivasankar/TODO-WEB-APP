@@ -12,6 +12,8 @@ import {
   closestCenter,
   KeyboardSensor,
   PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   DragOverlay, 
@@ -53,6 +55,35 @@ function SortableCard({ list, items, children }) {
   );
 }
 
+function SortablePill({ list, activeListId, taskCounts, scrollToCard }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: list.id });
+  
+  const style = {
+    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+    touchAction: "none"
+  };
+
+  return (
+    <button 
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className={`${styles.chip} ${activeListId === list.id ? styles.activeChip : ""} ${isDragging ? styles.draggingChip : ""}`}
+      onClick={() => {
+        if (!isDragging) {
+          scrollToCard(list.id);
+        }
+      }}
+    >
+      <span className={styles.chipName}>{list.name}</span>
+      <span className={styles.chipCount}>{taskCounts[list.id] || 0}</span>
+    </button>
+  );
+}
+
 export default function AllTasksPage() {
   const { 
     lists, 
@@ -64,6 +95,7 @@ export default function AllTasksPage() {
     onRenameList, 
     onDeleteList, 
     onReorderLists, 
+    onSortList,
     openCreateModal 
   } = useOutletContext();
 
@@ -87,6 +119,11 @@ export default function AllTasksPage() {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const pillSensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 6 } })
   );
 
   // Sync scroll position when activeListId changes (from Pills)
@@ -208,6 +245,16 @@ export default function AllTasksPage() {
     }
   }
 
+  function handlePillDragEnd(event) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = displayedLists.findIndex((l) => l.id === active.id);
+    const newIndex = displayedLists.findIndex((l) => l.id === over.id);
+    const newOrder = arrayMove(displayedLists, oldIndex, newIndex);
+    onReorderLists(newOrder);
+    scrollToCard(active.id);
+  }
+
   if (count === 0 && !isMobile) {
     return (
       <div className={styles.emptyState}>
@@ -230,25 +277,28 @@ export default function AllTasksPage() {
     <div className={styles.pageWrapper}>
       {isMobile && (
         <div className={styles.chipNavWrapper}>
-          <div className={styles.chipNav} ref={chipNavRef}>
-            {displayedLists.map((list) => (
-              <button 
-                key={list.id} 
-                className={`${styles.chip} ${activeListId === list.id ? styles.activeChip : ""}`}
-                onClick={() => scrollToCard(list.id)}
-              >
-                <span className={styles.chipName}>{list.name}</span>
-                <span className={styles.chipCount}>{taskCounts[list.id] || 0}</span>
-              </button>
-            ))}
-            <button 
-              className={`${styles.chip} ${styles.createListPill}`}
-              onClick={openCreateModal}
-            >
-              <span className={styles.plusIcon}>＋</span>
-              <span className={styles.chipName}>New List</span>
-            </button>
-          </div>
+          <DndContext sensors={pillSensors} collisionDetection={closestCenter} onDragEnd={handlePillDragEnd}>
+            <SortableContext items={displayedLists.map(l => l.id)} strategy={horizontalListSortingStrategy}>
+              <div className={styles.chipNav} ref={chipNavRef}>
+                {displayedLists.map((list) => (
+                  <SortablePill 
+                    key={list.id} 
+                    list={list} 
+                    activeListId={activeListId}
+                    taskCounts={taskCounts}
+                    scrollToCard={scrollToCard}
+                  />
+                ))}
+                <button 
+                  className={`${styles.chip} ${styles.createListPill}`}
+                  onClick={openCreateModal}
+                >
+                  <span className={styles.plusIcon}>＋</span>
+                  <span className={styles.chipName}>New List</span>
+                </button>
+              </div>
+            </SortableContext>
+          </DndContext>
         </div>
       )}
 
@@ -271,6 +321,7 @@ export default function AllTasksPage() {
                       onDeleteList={onDeleteList} 
                       isSingleView={count === 1 && !isMobile}
                       onCountUpdate={onCountUpdate}
+                      onSortList={onSortList}
                     />
                   </SortableCard>
                 </div>

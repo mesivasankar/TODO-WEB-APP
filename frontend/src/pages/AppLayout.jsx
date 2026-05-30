@@ -21,6 +21,7 @@ import {
   deleteListApi,
   reorderLists,
   restoreListApi,
+  updateListSortApi,
 } from "../api/listsApi";
 
 export default function AppLayout() {
@@ -267,6 +268,11 @@ export default function AppLayout() {
     try { await reorderLists(newLists.map(l => l.id)); } catch(err) { console.error(err); }
   }
 
+  async function handleSortList(listId, sortOption) {
+    setLists((prev) => prev.map((list) => list.id === listId ? { ...list, task_sort_option: sortOption } : list));
+    try { await updateListSortApi(listId, sortOption); } catch (err) { console.error(err); }
+  }
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -325,6 +331,7 @@ export default function AppLayout() {
               onRenameList: handleRenameList,
               onDeleteList: handleDeleteList,
               onReorderLists: handleReorderLists,
+              onSortList: handleSortList,
               openCreateModal: () => setIsCreateModalOpen(true)
             }}
           />

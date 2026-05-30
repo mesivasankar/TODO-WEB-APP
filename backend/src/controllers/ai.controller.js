@@ -3,8 +3,8 @@ import { env } from "../config/env.js";
 
 // Initialize Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-// Use the alias that always points to the free tier model
-const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+// Use the standard recommended Gemini 2.5 Flash Lite model (compatible with newer keys)
+const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
 /* ============================================================
    🛑 RATE LIMITING SYSTEM (In-Memory)
@@ -78,6 +78,14 @@ export async function suggestSubtasks(req, res, next) {
   try {
     const { taskTitle, instruction } = req.body;
 
+    // 🔥 STEP 0: Validate Gemini API Key (support standard AIzaSy and new AQ. prefixes)
+    const apiKey = process.env.GEMINI_API_KEY || "";
+    if (!apiKey || (!apiKey.startsWith("AIzaSy") && !apiKey.startsWith("AQ."))) {
+      return res.status(403).json({
+        message: "Your Gemini API key is missing or invalid (it should start with 'AIzaSy' or 'AQ.'). Please generate a new free key at https://aistudio.google.com/ and set GEMINI_API_KEY in your backend .env file."
+      });
+    }
+
     // We assume req.user exists because of 'requireAuth' middleware
     const userId = req.user?.id || "anonymous";
 
@@ -128,8 +136,26 @@ export async function suggestSubtasks(req, res, next) {
 
   } catch (err) {
     console.error("AI Controller Error:", err);
+    
+    // Proactive diagnostic checks for revoked/leaked/invalid keys
+    const errorMsg = err.message || "";
+    if (
+      err.status === 400 ||
+      err.status === 403 ||
+      err.status === 404 ||
+      errorMsg.includes("API key was reported as leaked") ||
+      errorMsg.includes("API key not found") ||
+      errorMsg.includes("API_KEY_INVALID") ||
+      errorMsg.includes("not found for API version") ||
+      errorMsg.includes("API key")
+    ) {
+      return res.status(403).json({
+        message: "Your Gemini API key is invalid, revoked, or has expired. Please generate a new free key at https://aistudio.google.com/ and update GEMINI_API_KEY in your backend .env file."
+      });
+    }
+
     // Handle the specific "Quota Exceeded" error from Google
-    if (err.status === 429 || err.message?.includes("429")) {
+    if (err.status === 429 || errorMsg.includes("429")) {
       return res.status(429).json({ message: "System busy. Please try again later." });
     }
     return res.status(500).json({ message: "Failed to generate suggestions" });

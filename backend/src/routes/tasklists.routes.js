@@ -5,7 +5,8 @@ import {
   createTaskList, 
   renameTaskList, 
   reorderTaskLists,
-  restoreTaskList
+  restoreTaskList,
+  updateTaskListSort
 } from '../controllers/tasklists.controller.js';
 import { requireAuth } from '../middleware/auth.middleware.js';
 
@@ -17,6 +18,8 @@ router.post('/', requireAuth, createTaskList);
 
 // 🔥 NEW: Reorder Route (Must come before /:id)
 router.patch('/reorder', requireAuth, reorderTaskLists);
+
+router.patch('/:id/sort', requireAuth, updateTaskListSort);
 
 router.patch('/:id', requireAuth, renameTaskList);
 

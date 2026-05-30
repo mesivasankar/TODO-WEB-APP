@@ -5,7 +5,8 @@ import {
   renameTaskListForUser,
   reorderTaskListsForUser,
   softDeleteTaskListForUser,
-  restoreTaskListForUser
+  restoreTaskListForUser,
+  updateTaskListSortOption
 } from '../services/tasklists.service.js';
 
 export async function getTaskLists(req, res, next) {
@@ -132,6 +133,28 @@ export async function restoreTaskList(req, res, next) {
     const listId = req.params.id;
     await restoreTaskListForUser(userId, listId);
     return res.json({ message: 'List restored successfully' });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+export async function updateTaskListSort(req, res, next) {
+  try {
+    const userId = req.user.id;
+    const listId = req.params.id;
+    const { sortOption } = req.body || {};
+
+    if (!sortOption || typeof sortOption !== 'string') {
+      return res.status(400).json({ message: 'sortOption is required.' });
+    }
+
+    const updatedList = await updateTaskListSortOption(userId, listId, sortOption);
+
+    if (!updatedList) {
+      return res.status(404).json({ message: 'List not found.' });
+    }
+
+    return res.json({ list: updatedList });
   } catch (err) {
     return next(err);
   }

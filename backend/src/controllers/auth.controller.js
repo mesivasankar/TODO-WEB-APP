@@ -215,15 +215,10 @@ export async function register(req, res, next) {
     const verificationUrl =
       `${env.serverBaseUrl}/api/auth/verify-email?token=${verificationToken.token}`;
 
-    try {
-      await sendVerificationEmail(user.email, verificationUrl);
-    } catch (emailError) {
-      console.error('Failed to send verification email:', emailError);
-      return res.status(500).json({
-        message:
-          'Registration failed while sending verification email. Please try again later.',
-      });
-    }
+    // Send verification email asynchronously in the background so slow SMTP connections or port blocks don't hang the registration request.
+    sendVerificationEmail(user.email, verificationUrl).catch(emailError => {
+      console.error('Failed to send verification email in background:', emailError);
+    });
 
     return res.status(201).json({
       message:
@@ -277,7 +272,10 @@ export async function resendVerificationEmail(req, res, next) {
     const verificationUrl =
       `${env.serverBaseUrl}/api/auth/verify-email?token=${newToken}`;
 
-    await sendVerificationEmail(email, verificationUrl);
+    // Send verification email asynchronously in the background so slow SMTP connections or port blocks don't hang the request.
+    sendVerificationEmail(email, verificationUrl).catch(emailError => {
+      console.error('Failed to resend verification email in background:', emailError);
+    });
 
     return res.json({ message: "Verification email resent" });
   } catch (err) {
