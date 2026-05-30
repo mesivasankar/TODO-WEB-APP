@@ -17,7 +17,7 @@ import env from '../config/env';
 
 export async function apiRequest(url, options = {}) {
   const response = await fetch(
-    `${import.meta.env.VITE_API_BASE_URL}${url}`,
+    `${env.apiBaseUrl}${url}`,
     {
       credentials: 'include',
       headers: {

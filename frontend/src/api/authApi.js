@@ -1,8 +1,9 @@
 import { apiRequest } from './client';
+import env from '../config/env';
 
 export async function resendVerificationEmail(token) {
   return fetch(
-    `${import.meta.env.VITE_API_BASE_URL}/api/auth/resend-verification`,
+    `${env.apiBaseUrl}/api/auth/resend-verification`,
     {
       method: "POST",
       headers: {

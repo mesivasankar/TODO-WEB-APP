@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import styles from "./LoginPage.module.css";
+import env from "../config/env";
 import LogoLight from "../assets/Logo-light.png";
 import LogoDark from "../assets/Logo-dark.png";
 import useAuth from "../hooks/useAuth";
@@ -299,7 +300,7 @@ export default function RegisterPage() {
             type="button"
             className={styles.googleButton}
             onClick={() =>
-              (window.location.href = `${import.meta.env.VITE_API_BASE_URL}/api/auth/google`)
+              (window.location.href = `${env.apiBaseUrl}/api/auth/google`)
             }
           >
             Continue with Google

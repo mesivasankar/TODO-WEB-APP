@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import styles from "./LoginPage.module.css";
+import env from "../config/env";
 import LogoLight from "../assets/Logo-light.png";
 import LogoDark from "../assets/Logo-dark.png";
 import { useNavigate } from "react-router-dom";
@@ -139,7 +140,7 @@ export default function LoginPage() {
              disabled={loading}
             onClick={() =>
             (window.location.href =
-              `${import.meta.env.VITE_API_BASE_URL}/api/auth/google`)
+              `${env.apiBaseUrl}/api/auth/google`)
             }
           >
             Continue with Google
