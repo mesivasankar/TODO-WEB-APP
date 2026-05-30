@@ -39,9 +39,14 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
+const isLocalIP = (ip) => {
+  return ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
+};
+
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, 
   max: 200,
+  skip: (req) => isLocalIP(req.ip),
   standardHeaders: true,
   legacyHeaders: false,     
 });
@@ -49,6 +54,7 @@ const apiLimiter = rateLimit({
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, 
   max: env.isProduction ? 20 : 1000,              
+  skip: (req) => isLocalIP(req.ip),
   message: {
     message: 'Too many login or signup attempts from this IP, please try again later.',
   },
