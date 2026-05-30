@@ -1,5 +1,5 @@
 import React from 'react';
-import '../styles/preloader.css';
+import '../styles/Preloader.css';
 import logoLight from '../assets/Logo-light.png';
 import logoDark from '../assets/Logo-dark.png';
 import { useTheme } from '../contexts/ThemeContext';
