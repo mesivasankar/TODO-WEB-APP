@@ -69,3 +69,28 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--border);
 }
+
+/* ============================================================
+   ✨ SHIMMER SKELETON ANIMATIONS
+   ============================================================ */
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.shimmer-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--surface-1) 25%,
+    var(--surface-2) 50%,
+    var(--surface-1) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite ease-in-out;
+  border-radius: 6px;
+  display: inline-block;
+}

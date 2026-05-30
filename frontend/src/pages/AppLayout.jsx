@@ -30,6 +30,7 @@ export default function AppLayout() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isCheatSheetOpen, setIsCheatSheetOpen] = useState(false);
   const [lists, setLists] = useState([]);
+  const [isListsLoading, setIsListsLoading] = useState(true);
   
   // 🔥 NEW: Lifted state to share counts between cards and sidebar
   const [taskCounts, setTaskCounts] = useState({});
@@ -114,6 +115,7 @@ export default function AppLayout() {
         }
         setSelectedListIds(validatedSelection);
       } catch (error) { console.error("Failed to load lists", error); }
+      finally { setIsListsLoading(false); }
     }
     init();
   }, []);
@@ -307,6 +309,7 @@ export default function AppLayout() {
             onListsChange={setLists}
             openCreateModal={() => setIsCreateModalOpen(true)}
             taskCounts={taskCounts} // 🔥 Pass global counts to Sidebar
+            isListsLoading={isListsLoading}
           />
         </div>
 

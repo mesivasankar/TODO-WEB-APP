@@ -620,3 +620,19 @@
   border-color: rgba(52, 211, 153, 0.8) !important;
   box-shadow: 0 0 25px rgba(52, 211, 153, 0.15) !important;
 }
+
+/* ============================================================
+   ✨ SKELETON MATRIX STYLES
+   ============================================================ */
+.skeletonQuadTitle {
+  height: 20px;
+  width: 140px;
+  border-radius: 4px;
+}
+
+.skeletonTaskCard {
+  height: 48px;
+  width: 100%;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}

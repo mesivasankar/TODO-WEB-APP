@@ -134,6 +134,7 @@ export default function PriorityMatrix() {
   const [editingId, setEditingId] = useState(null);
   const [editText, setEditText] = useState("");
   const [activeId, setActiveId] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const { showUndoToast } = useToast();
 
   const sensors = useSensors(
@@ -150,8 +151,55 @@ export default function PriorityMatrix() {
         const taskList = Array.isArray(data) ? data : (data?.data || []);
         setTasks(taskList);
       })
-      .catch((err) => console.error("Fetch error:", err));
+      .catch((err) => console.error("Fetch error:", err))
+      .finally(() => setIsLoading(false));
   }, []);
+
+  if (isLoading) {
+    return (
+      <div className={styles.container}>
+        <header className={styles.headerArea}>
+          <h1 className={styles.header}>Priority Matrix</h1>
+          <p className={styles.subtitle}>Filter and focus on your top 2 highest leverage tasks per quadrant.</p>
+        </header>
+
+        <div className={styles.matrixWrapper}>
+          <div className={styles.xAxisLabelTop}>
+            <span>URGENT</span>
+            <span>NOT URGENT</span>
+          </div>
+
+          <div className={styles.matrixContent}>
+            <div className={styles.yAxisLabelLeft}>
+              <span className={styles.axisTextVertical}>IMPORTANT</span>
+              <span className={styles.axisTextVertical}>NOT IMPORTANT</span>
+            </div>
+
+            <div className={styles.gridContainer}>
+              <div className={styles.grid}>
+                {quadrants.map((q) => (
+                  <div key={q.id} className={`${styles.quadrant} ${styles['quad' + q.id]}`}>
+                    <div className={styles.quadHeader}>
+                      <div className={styles.titleRow}>
+                        <span className={styles.badge} style={{ backgroundColor: q.color }}>Q{q.id}</span>
+                        <div className={`${styles.skeletonQuadTitle} shimmer-skeleton`} />
+                      </div>
+                      <span className={styles.quadAction} style={{ color: q.color }}>{q.action}</span>
+                    </div>
+
+                    <div className={styles.taskList} style={{ paddingBottom: '16px' }}>
+                      <div className={`${styles.skeletonTaskCard} shimmer-skeleton`} />
+                      <div className={`${styles.skeletonTaskCard} shimmer-skeleton`} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleAdd = async (qId) => {
     const text = inputs[qId].trim();

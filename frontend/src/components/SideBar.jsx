@@ -31,7 +31,7 @@ function SortableListItem({ list, selectedListIds, onToggleList, count }) {
   );
 }
 
-export default function SideBar({ lists, selectedListIds, onToggleList, onListsChange, openCreateModal, taskCounts = {} }) {
+export default function SideBar({ lists, selectedListIds, onToggleList, onListsChange, openCreateModal, taskCounts = {}, isListsLoading = false }) {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 1024);
   const [specialCounts, setSpecialCounts] = useState({ overdue: 0, today: 0, upcoming: 0, starred: 0 });
 
@@ -102,19 +102,27 @@ export default function SideBar({ lists, selectedListIds, onToggleList, onListsC
         <>
           <div className={styles.divider} />
           <div className={styles.listSection}>
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-              <SortableContext items={lists.map(l => l.id)} strategy={verticalListSortingStrategy}>
-                {lists.map(list => (
-                  <SortableListItem 
-                    key={list.id} 
-                    list={list} 
-                    selectedListIds={selectedListIds} 
-                    onToggleList={onToggleList} 
-                    count={taskCounts[list.id] || 0} // 🔥 Pass global count
-                  />
-                ))}
-              </SortableContext>
-            </DndContext>
+            {isListsLoading ? (
+              <div className={styles.skeletonContainer}>
+                <div className={`${styles.skeletonItem} shimmer-skeleton`} />
+                <div className={`${styles.skeletonItem} shimmer-skeleton`} />
+                <div className={`${styles.skeletonItem} shimmer-skeleton`} />
+              </div>
+            ) : (
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={lists.map(l => l.id)} strategy={verticalListSortingStrategy}>
+                  {lists.map(list => (
+                    <SortableListItem 
+                      key={list.id} 
+                      list={list} 
+                      selectedListIds={selectedListIds} 
+                      onToggleList={onToggleList} 
+                      count={taskCounts[list.id] || 0} // 🔥 Pass global count
+                    />
+                  ))}
+                </SortableContext>
+              </DndContext>
+            )}
             <div className={styles.createItem} onClick={openCreateModal}>
               <span className={styles.icon}>＋</span> <span className={styles.label}>Create new list</span>
             </div>

@@ -805,7 +805,30 @@ export default function ListTasksCard({ list, onRenameList, onDeleteList, isSing
   };
 
   /* ================= MAIN RENDER ================= */
-  if (isLoading) return null;
+  if (isLoading) {
+    return (
+      <section className={`${styles.skeletonCard} ${isSingleView || isStarredMode || isTodayMode || isUpcomingMode || isOverdueMode ? styles.singleViewCard : ""}`}>
+        <div className={styles.skeletonHeader}>
+          <div className={`${styles.skeletonTitle} shimmer-skeleton`} />
+          <div className={`${styles.skeletonBadge} shimmer-skeleton`} />
+        </div>
+        <div className={styles.skeletonContent}>
+          <div className={`${styles.skeletonBtn} shimmer-skeleton`} />
+          <div className={styles.skeletonList}>
+            {[1, 2, 3].map((n) => (
+              <div key={n} className={styles.skeletonRow}>
+                <div className={`${styles.skeletonCircle} shimmer-skeleton`} />
+                <div className={styles.skeletonTextContainer}>
+                  <div className={`${styles.skeletonLineLong} shimmer-skeleton`} style={{ width: `${60 + Math.random() * 20}%` }} />
+                  <div className={`${styles.skeletonLineShort} shimmer-skeleton`} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   const isSpecialMode = isStarredMode || isTodayMode || isUpcomingMode || isOverdueMode;
   const hasActiveTasks = activeRoots.length > 0;

@@ -1148,3 +1148,86 @@
 .bottomSheetSave:active:not(:disabled) {
   transform: scale(0.97);
 }
+
+/* ============================================================
+   ✨ SKELETON PLACEHOLDERS
+   ============================================================ */
+.skeletonCard {
+  width: 100%;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.skeletonHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.skeletonTitle {
+  height: 24px;
+  width: 140px;
+}
+
+.skeletonBadge {
+  height: 18px;
+  width: 60px;
+  border-radius: 99px;
+}
+
+.skeletonContent {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.skeletonBtn {
+  height: 38px;
+  width: 100%;
+  border-radius: 8px;
+}
+
+.skeletonList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.skeletonRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.skeletonCircle {
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.skeletonTextContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.skeletonLineLong {
+  height: 14px;
+  width: 65%;
+}
+
+.skeletonLineShort {
+  height: 10px;
+  width: 25%;
+}
