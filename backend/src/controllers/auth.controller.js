@@ -145,7 +145,7 @@ export async function googleAuthCallback(req, res, next) {
     const token = jwt.sign(
       { userId: user.id },
       env.jwtSecret,
-      { expiresIn: 'AUTH_JWT_EXPIRES_IN' }
+      { expiresIn: AUTH_JWT_EXPIRES_IN }
     );
 
     res.cookie('access_token', token, {
