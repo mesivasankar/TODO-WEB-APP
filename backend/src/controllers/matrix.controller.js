@@ -31,7 +31,13 @@ export const updateMatrixTask = async (req, res, next) => {
     const { text, is_completed, quadrant } = req.body;
     const result = await pool.query(
       'UPDATE matrix_tasks SET task_text = COALESCE($1, task_text), is_completed = COALESCE($2, is_completed), quadrant = COALESCE($3, quadrant) WHERE id = $4 AND user_id = $5 RETURNING *',
-      [text, is_completed, quadrant, id, req.user.id]
+      [
+        text !== undefined ? text : null,
+        is_completed !== undefined ? is_completed : null,
+        quadrant !== undefined ? quadrant : null,
+        id,
+        req.user.id
+      ]
     );
     res.json(result.rows[0]);
   } catch (error) {

@@ -22,22 +22,10 @@ export async function getTaskListsForUser(userId) {
 }
 
 export async function createTaskListForUser(userId, name, category = 'OTHERS') {
-  const orderResult = await pool.query(
-    `
-      SELECT COALESCE(MAX(sort_order), -1) AS max_order
-      FROM task_lists
-      WHERE user_id = $1
-    `,
-    [userId]
-  );
-
-  const maxOrder = orderResult.rows[0].max_order;
-  const nextOrder = maxOrder + 1;
-
   const insertResult = await pool.query(
     `
       INSERT INTO task_lists (user_id, name, sort_order, is_default, category)
-      VALUES ($1, $2, $3, FALSE, $4)
+      VALUES ($1, $2, COALESCE((SELECT MAX(sort_order) + 1 FROM task_lists WHERE user_id = $1), 0), FALSE, $3)
       RETURNING
         id,
         user_id,
@@ -48,7 +36,7 @@ export async function createTaskListForUser(userId, name, category = 'OTHERS') {
         created_at,
         updated_at
     `,
-    [userId, name, nextOrder, category]
+    [userId, name, category]
   );
 
   return insertResult.rows[0];
@@ -107,75 +95,34 @@ export async function reorderTaskListsForUser(userId, orderedIds) {
 
 // 🔥 NEW: SOFT DELETE FUNCTION
 export async function softDeleteTaskListForUser(userId, listId) {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-
-    // 1. Mark the LIST as deleted and get the exact timestamp
-    const listQuery = `
+  const query = `
+    WITH deleted_list AS (
       UPDATE task_lists 
       SET deleted_at = NOW(), updated_at = NOW()
       WHERE id = $1 AND user_id = $2
       RETURNING deleted_at
-    `;
-    const listRes = await client.query(listQuery, [listId, userId]);
-    const deletedAt = listRes.rows[0]?.deleted_at;
-
-    if (deletedAt) {
-      // 2. Mark only active TASKS in that list as deleted with the exact same timestamp
-      const tasksQuery = `
-        UPDATE tasks 
-        SET deleted_at = $1, updated_at = NOW()
-        WHERE list_id = $2 AND user_id = $3 AND deleted_at IS NULL
-      `;
-      await client.query(tasksQuery, [deletedAt, listId, userId]);
-    }
-
-    await client.query('COMMIT');
-  } catch (e) {
-    await client.query('ROLLBACK');
-    throw e;
-  } finally {
-    client.release();
-  }
+    )
+    UPDATE tasks 
+    SET deleted_at = (SELECT deleted_at FROM deleted_list), updated_at = NOW()
+    WHERE list_id = $1 AND user_id = $2 AND deleted_at IS NULL
+  `;
+  await pool.query(query, [listId, userId]);
 }
 
 // 🔥 NEW: RESTORE FUNCTION FOR UNDO OPERATIONS
 export async function restoreTaskListForUser(userId, listId) {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-
-    // 1. Fetch the deleted_at timestamp first
-    const selectQuery = `
+  const query = `
+    WITH old_list AS (
       SELECT deleted_at FROM task_lists WHERE id = $1 AND user_id = $2
-    `;
-    const selectRes = await client.query(selectQuery, [listId, userId]);
-    const deletedAt = selectRes.rows[0]?.deleted_at;
-
-    if (deletedAt) {
-      // 2. Restore all TASKS in that list that were active before (matching deleted_at)
-      const tasksQuery = `
-        UPDATE tasks 
-        SET deleted_at = NULL, updated_at = NOW()
-        WHERE list_id = $1 AND user_id = $2 AND deleted_at = $3
-      `;
-      await client.query(tasksQuery, [listId, userId, deletedAt]);
-    }
-
-    // 3. Restore the LIST by setting deleted_at = NULL
-    const listQuery = `
-      UPDATE task_lists 
+    ),
+    update_list AS (
+      UPDATE task_lists
       SET deleted_at = NULL, updated_at = NOW()
       WHERE id = $1 AND user_id = $2
-    `;
-    await client.query(listQuery, [listId, userId]);
-
-    await client.query('COMMIT');
-  } catch (e) {
-    await client.query('ROLLBACK');
-    throw e;
-  } finally {
-    client.release();
-  }
+    )
+    UPDATE tasks
+    SET deleted_at = NULL, updated_at = NOW()
+    WHERE list_id = $1 AND user_id = $2 AND deleted_at = (SELECT deleted_at FROM old_list)
+  `;
+  await pool.query(query, [listId, userId]);
 }

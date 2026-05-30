@@ -344,6 +344,28 @@ export default function ListTasksCard({ list, onRenameList, onDeleteList, isSing
   useEffect(() => { loadTasks(); }, [list?.id, isStarredMode, isTodayMode, isUpcomingMode, isOverdueMode]);
 
   useEffect(() => {
+    if (editorOpen) {
+      const timer = setTimeout(() => {
+        if (titleRef.current) {
+          titleRef.current.focus();
+        }
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [editorOpen]);
+
+  useEffect(() => {
+    if (addingSubtaskToId) {
+      const timer = setTimeout(() => {
+        if (subTitleRef.current) {
+          subTitleRef.current.focus();
+        }
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [addingSubtaskToId]);
+
+  useEffect(() => {
     function handleClickOutside(e) {
       if (listMenuRef.current && !listMenuRef.current.contains(e.target)) setListMenuOpen(false);
       if (taskMenuRef.current && !taskMenuRef.current.contains(e.target)) setOpenMenuTaskId(null);
@@ -541,13 +563,56 @@ export default function ListTasksCard({ list, onRenameList, onDeleteList, isSing
   }
 
   async function handleDelete(taskId) {
-    const taskToRestore = tasks.find(t => t.id === taskId); const subtasksToRestore = tasks.filter(t => { const pid = t.parent_task_id || t.parentTaskId; return String(pid) === String(taskId); });
-    setTasks(p => p.filter(t => { const pid = t.parent_task_id || t.parentTaskId; return String(t.id) !== String(taskId) && String(pid) !== String(taskId); }));
+    const taskToRestore = tasks.find(t => t.id === taskId); 
+    const subtasksToRestore = tasks.filter(t => { 
+      const pid = t.parent_task_id || t.parentTaskId; 
+      return String(pid) === String(taskId); 
+    });
+
+    // 1. Optimistically filter out of frontend state immediately
+    setTasks(p => p.filter(t => { 
+      const pid = t.parent_task_id || t.parentTaskId; 
+      return String(t.id) !== String(taskId) && String(pid) !== String(taskId); 
+    }));
     setOpenMenuTaskId(null);
+
+    // 2. Instantly show undo toast
+    showUndoToast(
+      "Task deleted", 
+      async () => { 
+        // Undo clicked: restore state locally
+        setTasks(prev => [...prev, taskToRestore, ...subtasksToRestore]); 
+        try { 
+          await restoreTask(taskId); 
+        } catch (e) { 
+          // Revert if API restore fails
+          setTasks(prev => prev.filter(t => t.id !== taskId)); 
+        } 
+      }, 
+      async () => { 
+        // Toast expired: do permanent cleanup if needed
+        try { 
+          await permanentDeleteTask(taskId); 
+        } catch (e) { 
+          console.error("Failed to permanently delete", e); 
+        } 
+      }
+    );
+
+    // 3. Trigger API soft delete in background
     try {
       await deleteTask(taskId);
-      showUndoToast("Task deleted", async () => { setTasks(prev => [...prev, taskToRestore, ...subtasksToRestore]); try { await restoreTask(taskId); } catch (e) { setTasks(prev => prev.filter(t => t.id !== taskId)); } }, async () => { try { await permanentDeleteTask(taskId); } catch (e) { console.error("Failed to permanently delete", e); } });
-    } catch (e) { if (taskToRestore) setTasks(prev => [...prev, taskToRestore, ...subtasksToRestore]); console.error(e); }
+    } catch (e) { 
+      console.error(e);
+      // Revert if API soft-delete fails and user hasn't hit undo already
+      setTasks(prev => {
+        const exists = prev.some(t => t.id === taskId);
+        if (!exists && taskToRestore) {
+          return [...prev, taskToRestore, ...subtasksToRestore];
+        }
+        return prev;
+      });
+    }
   }
 
   async function handleToggleComplete(taskId, status) {

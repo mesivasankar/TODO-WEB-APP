@@ -15,11 +15,6 @@ export async function getTasksForList(userId, listId) {
 }
 
 export async function createTaskInList(userId, listId, { title, description, dueDate, parentTaskId, recurrenceType, category }) {
-  const listResult = await pool.query(`SELECT category FROM task_lists WHERE id = $1`, [listId]);
-  const listCategory = listResult.rows[0]?.category || 'OTHERS';
-
-  let finalCategory = listCategory === 'OTHERS' ? (category || 'OTHERS') : listCategory;
-
   const query = `
     INSERT INTO tasks (
       user_id, list_id, parent_task_id, title, description,
@@ -28,13 +23,17 @@ export async function createTaskInList(userId, listId, { title, description, due
     VALUES (
       $1, $2, $3, $4, $5, FALSE, FALSE, $6,
       COALESCE((SELECT MAX(sort_order) + 1 FROM tasks WHERE user_id = $1 AND list_id = $2), 1),
-      $7, $8
+      $7,
+      COALESCE(
+        (SELECT CASE WHEN category = 'OTHERS' THEN $8 ELSE category END FROM task_lists WHERE id = $2),
+        $8
+      )
     )
     RETURNING *
   `;
   const values = [
     userId, listId, parentTaskId ?? null, title, description ?? null, 
-    dueDate ?? null, recurrenceType ?? null, finalCategory
+    dueDate ?? null, recurrenceType ?? null, category || 'OTHERS'
   ];
   const { rows } = await pool.query(query, values);
   return rows[0];
@@ -76,60 +75,51 @@ export async function updateTaskForUser(userId, taskId, { title, description, du
 }
 
 export async function restoreTaskForUser(userId, taskId) {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    const query = `UPDATE tasks SET deleted_at = NULL, updated_at = NOW() WHERE id = $1 AND user_id = $2 AND deleted_at IS NOT NULL RETURNING id`;
-    const { rows } = await client.query(query, [taskId, userId]);
-    if (rows.length > 0) {
-      await client.query(`UPDATE tasks SET deleted_at = NULL, updated_at = NOW() WHERE parent_task_id = $1 AND user_id = $2`, [taskId, userId]);
-    }
-    await client.query('COMMIT');
-    return rows[0] || null;
-  } catch (e) {
-    await client.query('ROLLBACK');
-    throw e;
-  } finally { client.release(); }
+  const query = `
+    WITH restored_parent AS (
+      UPDATE tasks 
+      SET deleted_at = NULL, updated_at = NOW() 
+      WHERE id = $1 AND user_id = $2 AND deleted_at IS NOT NULL 
+      RETURNING id
+    ),
+    restored_subtasks AS (
+      UPDATE tasks 
+      SET deleted_at = NULL, updated_at = NOW() 
+      WHERE parent_task_id = $1 AND user_id = $2 AND deleted_at IS NOT NULL
+    )
+    SELECT id FROM restored_parent;
+  `;
+  const { rows } = await pool.query(query, [taskId, userId]);
+  return rows[0] || null;
 }
 
 export async function bulkRestoreTasksForUser(userId, taskIds) {
   if (!taskIds || !taskIds.length) return [];
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    const placeholders = taskIds.map((_, i) => `$${i + 2}`).join(',');
-    const query = `UPDATE tasks SET deleted_at = NULL, updated_at = NOW() WHERE user_id = $1 AND id IN (${placeholders}) AND deleted_at IS NOT NULL RETURNING id`;
-    const { rows } = await client.query(query, [userId, ...taskIds]);
-    
-    // Also restore subtasks of these tasks
-    if (rows.length > 0) {
-      const parentPlaceholders = taskIds.map((_, i) => `$${i + 2}`).join(',');
-      await client.query(`UPDATE tasks SET deleted_at = NULL, updated_at = NOW() WHERE user_id = $1 AND parent_task_id IN (${parentPlaceholders})`, [userId, ...taskIds]);
-    }
-    
-    await client.query('COMMIT');
-    return rows;
-  } catch (e) {
-    await client.query('ROLLBACK');
-    throw e;
-  } finally { client.release(); }
+  const query = `
+    WITH restored_parents AS (
+      UPDATE tasks 
+      SET deleted_at = NULL, updated_at = NOW() 
+      WHERE user_id = $1 AND id = ANY($2::uuid[]) AND deleted_at IS NOT NULL 
+      RETURNING id
+    ),
+    restored_subtasks AS (
+      UPDATE tasks 
+      SET deleted_at = NULL, updated_at = NOW() 
+      WHERE user_id = $1 AND parent_task_id = ANY($2::uuid[]) AND deleted_at IS NOT NULL
+    )
+    SELECT id FROM restored_parents;
+  `;
+  const { rows } = await pool.query(query, [userId, taskIds]);
+  return rows;
 }
 
 export async function reorderTasksInList(userId, listId, orderedIds) {
   if (!orderedIds.length) return [];
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    const cases = orderedIds.map((id, index) => `WHEN id = '${id}' THEN ${index}`).join(' ');
-    const idList = orderedIds.map(id => `'${id}'`).join(',');
-    const query = `UPDATE tasks SET sort_order = CASE ${cases} END, updated_at = NOW() WHERE id IN (${idList}) AND user_id = $1 AND list_id = $2 RETURNING id, sort_order`;
-    const { rows } = await client.query(query, [userId, listId]);
-    await client.query('COMMIT');
-    return rows;
-  } catch (e) {
-    await client.query('ROLLBACK');
-    throw e;
-  } finally { client.release(); }
+  const cases = orderedIds.map((id, index) => `WHEN id = '${id}' THEN ${index}`).join(' ');
+  const idList = orderedIds.map(id => `'${id}'`).join(',');
+  const query = `UPDATE tasks SET sort_order = CASE ${cases} END, updated_at = NOW() WHERE id IN (${idList}) AND user_id = $1 AND list_id = $2 RETURNING id, sort_order`;
+  const { rows } = await pool.query(query, [userId, listId]);
+  return rows;
 }
 
 export async function getTaskByIdForUser(userId, taskId) {
@@ -154,75 +144,60 @@ export async function searchTasksForUser(userId, query) {
 }
 
 export async function softDeleteTaskForUser(userId, taskId) {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    const { rows } = await client.query(`UPDATE tasks SET deleted_at = NOW(), updated_at = NOW() WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL RETURNING id`, [taskId, userId]);
-    if (rows.length > 0) {
-      await client.query(`UPDATE tasks SET deleted_at = NOW(), updated_at = NOW() WHERE parent_task_id = $1 AND user_id = $2`, [taskId, userId]);
-    }
-    await client.query('COMMIT');
-    return rows[0];
-  } catch (e) {
-    await client.query('ROLLBACK');
-    throw e;
-  } finally { client.release(); }
+  const query = `
+    WITH deleted_parent AS (
+      UPDATE tasks 
+      SET deleted_at = NOW(), updated_at = NOW() 
+      WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL 
+      RETURNING id
+    ),
+    deleted_subtasks AS (
+      UPDATE tasks 
+      SET deleted_at = NOW(), updated_at = NOW() 
+      WHERE parent_task_id = $1 AND user_id = $2
+    )
+    SELECT id FROM deleted_parent;
+  `;
+  const { rows } = await pool.query(query, [taskId, userId]);
+  return rows[0];
 }
 
 export async function permanentlyDeleteTaskForUser(userId, taskId) {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    const query = `WITH RECURSIVE task_tree AS ( SELECT id FROM tasks WHERE id = $1 AND user_id = $2 UNION ALL SELECT t.id FROM tasks t INNER JOIN task_tree tt ON t.parent_task_id = tt.id ) DELETE FROM tasks WHERE id IN (SELECT id FROM task_tree) RETURNING id`;
-    const { rows } = await client.query(query, [taskId, userId]);
-    await client.query('COMMIT');
-    return rows[0] || { id: taskId }; 
-  } catch (e) {
-    await client.query('ROLLBACK');
-    throw e;
-  } finally { client.release(); }
+  const query = `
+    WITH RECURSIVE task_tree AS (
+      SELECT id FROM tasks WHERE id = $1 AND user_id = $2
+      UNION ALL
+      SELECT t.id FROM tasks t INNER JOIN task_tree tt ON t.parent_task_id = tt.id
+    )
+    DELETE FROM tasks WHERE id IN (SELECT id FROM task_tree) RETURNING id
+  `;
+  const { rows } = await pool.query(query, [taskId, userId]);
+  return rows[0] || { id: taskId };
 }
 
 export async function bulkPermanentlyDeleteTasksForUser(userId, taskIds) {
   if (!taskIds || !taskIds.length) return [];
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    const placeholders = taskIds.map((_, i) => `$${i + 2}`).join(',');
-    const query = `
-      WITH RECURSIVE task_tree AS ( 
-        SELECT id FROM tasks WHERE id IN (${placeholders}) AND user_id = $1 
-        UNION ALL 
-        SELECT t.id FROM tasks t INNER JOIN task_tree tt ON t.parent_task_id = tt.id 
-      ) 
-      DELETE FROM tasks WHERE id IN (SELECT id FROM task_tree) RETURNING id
-    `;
-    const { rows } = await client.query(query, [userId, ...taskIds]);
-    await client.query('COMMIT');
-    return rows;
-  } catch (e) {
-    await client.query('ROLLBACK');
-    throw e;
-  } finally { client.release(); }
+  const query = `
+    WITH RECURSIVE task_tree AS (
+      SELECT id FROM tasks WHERE id = ANY($2::uuid[]) AND user_id = $1
+      UNION ALL
+      SELECT t.id FROM tasks t INNER JOIN task_tree tt ON t.parent_task_id = tt.id
+    )
+    DELETE FROM tasks WHERE id IN (SELECT id FROM task_tree) RETURNING id
+  `;
+  const { rows } = await pool.query(query, [userId, taskIds]);
+  return rows;
 }
 
 export async function deleteCompletedTasksForListUser(userId, listId) {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    const query = `
-      UPDATE tasks 
-      SET deleted_at = NOW(), updated_at = NOW() 
-      WHERE user_id = $1 AND list_id = $2 AND is_completed = true AND deleted_at IS NULL 
-      RETURNING id
-    `;
-    const { rows } = await client.query(query, [userId, listId]);
-    await client.query('COMMIT');
-    return rows;
-  } catch (e) {
-    await client.query('ROLLBACK');
-    throw e;
-  } finally { client.release(); }
+  const query = `
+    UPDATE tasks 
+    SET deleted_at = NOW(), updated_at = NOW() 
+    WHERE user_id = $1 AND list_id = $2 AND is_completed = true AND deleted_at IS NULL 
+    RETURNING id
+  `;
+  const { rows } = await pool.query(query, [userId, listId]);
+  return rows;
 }
 
 export async function cleanupOldTasks(userId) {
