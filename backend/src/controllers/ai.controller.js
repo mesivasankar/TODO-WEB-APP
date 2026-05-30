@@ -15,7 +15,7 @@ const usageTracker = new Map();
 
 const RATE_LIMITS = {
   MINUTE_LIMIT: 2,       // Max 2 requests per minute
-  DAILY_LIMIT: 5,        // Max 5 requests per day
+  DAILY_LIMIT: 50,       // Max 50 requests per day
   MINUTE_WINDOW: 60 * 1000,        // 1 minute in ms
   DAILY_WINDOW: 24 * 60 * 60 * 1000 // 24 hours in ms
 };
@@ -61,7 +61,7 @@ function checkRateLimit(userId) {
   }
 
   if (userUsage.dayCount >= RATE_LIMITS.DAILY_LIMIT) {
-    return { allowed: false, error: "Daily limit reached (5/day). Try again tomorrow." };
+    return { allowed: false, error: "Daily limit reached (50/day). Try again tomorrow." };
   }
 
   // 4. INCREMENT COUNTS (If allowed)
