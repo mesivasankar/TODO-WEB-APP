@@ -148,10 +148,14 @@ export async function googleAuthCallback(req, res, next) {
       { expiresIn: AUTH_JWT_EXPIRES_IN }
     );
 
+    const isLocalhost = req.get('host')?.includes('localhost') || req.get('host')?.includes('127.0.0.1');
+    const secureCookie = env.isProduction && !isLocalhost;
+    const sameSiteCookie = secureCookie ? 'none' : 'lax';
+
     res.cookie('access_token', token, {
       httpOnly: true,
-      secure: env.isProduction,
-      sameSite: env.isProduction ? 'none' : 'lax',
+      secure: secureCookie,
+      sameSite: sameSiteCookie,
       maxAge: AUTH_COOKIE_MAX_AGE
     });
 
@@ -332,10 +336,14 @@ export async function login(req, res, next) {
 
     const token = signAuthToken(user);
 
+    const isLocalhost = req.get('host')?.includes('localhost') || req.get('host')?.includes('127.0.0.1');
+    const secureCookie = env.isProduction && !isLocalhost;
+    const sameSiteCookie = secureCookie ? 'none' : 'lax';
+
     res.cookie('access_token', token, {
       httpOnly: true,
-      secure: env.isProduction,
-      sameSite: env.isProduction ? 'none' : 'lax',
+      secure: secureCookie,
+      sameSite: sameSiteCookie,
       maxAge: AUTH_COOKIE_MAX_AGE,
       expiresIn: '7d'
     });
@@ -356,10 +364,14 @@ export async function login(req, res, next) {
 }
 
 export function logout(req, res) {
+  const isLocalhost = req.get('host')?.includes('localhost') || req.get('host')?.includes('127.0.0.1');
+  const secureCookie = env.isProduction && !isLocalhost;
+  const sameSiteCookie = secureCookie ? 'none' : 'lax';
+
   res.clearCookie('access_token', {
     httpOnly: true,
-    secure: env.isProduction,
-    sameSite: env.isProduction ? 'none' : 'lax',
+    secure: secureCookie,
+    sameSite: sameSiteCookie,
   });
   return res.json({ message: 'Logged out successfully' });
 }
