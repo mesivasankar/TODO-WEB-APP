@@ -62,7 +62,7 @@ function SortablePill({ list, activeListId, taskCounts, scrollToCard }) {
     transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
     transition,
     opacity: isDragging ? 0.4 : 1,
-    touchAction: "none"
+    touchAction: isDragging ? "none" : "auto"
   };
 
   return (

@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import ConfirmDialog from './ConfirmDialog';
 import styles from './ProfileMenu.module.css';
 import StatsDashboard from './StatsDashboard';
+import DailyBriefingModal from './DailyBriefingModal';
 
 const ProfileMenu = ({ user, theme, toggleTheme, onLogout, onClose, onUpdateUser }) => {
   const [showConfirm, setShowConfirm] = useState(false);
@@ -11,17 +12,18 @@ const ProfileMenu = ({ user, theme, toggleTheme, onLogout, onClose, onUpdateUser
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(user?.name || "");
   const [showStats, setShowStats] = useState(false);
+  const [showBriefing, setShowBriefing] = useState(false);
 
-  // Close menu when clicking outside (Only if stats OR confirm dialog are NOT open)
+  // Close menu when clicking outside (Only if stats, briefing, OR confirm dialog are NOT open)
   useEffect(() => {
     function handleClickOutside(event) {
-      if (menuRef.current && !menuRef.current.contains(event.target) && !showStats && !showConfirm) {
+      if (menuRef.current && !menuRef.current.contains(event.target) && !showStats && !showConfirm && !showBriefing) {
         onClose();
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => { document.removeEventListener("mousedown", handleClickOutside); };
-  }, [onClose, showStats, showConfirm]);
+  }, [onClose, showStats, showConfirm, showBriefing]);
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -110,6 +112,21 @@ const ProfileMenu = ({ user, theme, toggleTheme, onLogout, onClose, onUpdateUser
 
         <div className={styles.separator}></div>
 
+        {/* 🎙️ NEW: AI Daily Briefing */}
+        <button className={styles.menuItem} onClick={() => setShowBriefing(true)}>
+           <span className={styles.menuIcon}>
+             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                <line x1="12" y1="19" x2="12" y2="23"></line>
+                <line x1="8" y1="23" x2="16" y2="23"></line>
+             </svg>
+           </span>
+           <span>AI Daily Briefing</span>
+        </button>
+
+        <div className={styles.separator}></div>
+
         {/* Logout */}
         <button className={styles.logoutButton} onClick={() => setShowConfirm(true)}>
           <span className={styles.menuIcon}>
@@ -133,7 +150,9 @@ const ProfileMenu = ({ user, theme, toggleTheme, onLogout, onClose, onUpdateUser
       )}
 
       {showStats && <StatsDashboard onClose={() => setShowStats(false)} />}
+      {showBriefing && <DailyBriefingModal onClose={() => setShowBriefing(false)} />}
     </>
+
   );
 };
 

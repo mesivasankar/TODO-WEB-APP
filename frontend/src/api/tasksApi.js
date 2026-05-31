@@ -134,9 +134,15 @@ export async function bulkPermanentDeleteTasks(taskIds) {
 }
 
 export async function getAnalytics() {
-  const response = await apiRequest(`/api/analytics`);
+  const response = await apiRequest(`/api/tasks/analytics`);
   return response.json();
 }
+
+export async function getDailyBriefing() {
+  const response = await apiRequest(`/api/ai/briefing`);
+  return response.json();
+}
+
 
 
 

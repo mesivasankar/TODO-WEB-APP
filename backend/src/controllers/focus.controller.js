@@ -103,12 +103,13 @@ export const getFocusSessionsStats = async (req, res, next) => {
 
     const { total_minutes, session_count } = aggregatesResult.rows[0];
 
-    // ⚡ STEP 3: Daily focus breakdown for the last 7 days (Includes COMPLETED + PARTIAL)
+    // ⚡ STEP 3: Daily focus breakdown for the last 1 year (Includes COMPLETED + PARTIAL)
     const dailyResult = await pool.query(
       `SELECT TO_CHAR(created_at, 'YYYY-MM-DD') as date,
-              SUM(minutes_focused)::int as minutes
+              SUM(minutes_focused)::int as minutes,
+              COUNT(CASE WHEN status = 'COMPLETED' THEN 1 END)::int as sessions
        FROM focus_sessions
-       WHERE user_id = $1 AND status IN ('COMPLETED', 'PARTIAL') AND created_at >= NOW() - INTERVAL '7 days'
+       WHERE user_id = $1 AND status IN ('COMPLETED', 'PARTIAL') AND created_at >= NOW() - INTERVAL '1 year'
        GROUP BY TO_CHAR(created_at, 'YYYY-MM-DD')
        ORDER BY date ASC`,
       [userId]

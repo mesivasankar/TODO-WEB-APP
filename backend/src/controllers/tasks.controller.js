@@ -280,71 +280,19 @@ export async function getAnalytics(req, res, next) {
     const userId = req.user.id;
     cleanupOldTasks(userId).catch(err => console.error("Background cleanup error:", err));
 
-    const heatmapQuery = `
-      SELECT to_char(completed_at, 'YYYY-MM-DD') as date, COUNT(*) as count
+    const tasksQuery = `
+      SELECT completed_at, category
       FROM tasks
-      WHERE user_id = $1 AND is_completed = true AND completed_at > NOW() - INTERVAL '1 year'
-      GROUP BY date
+      WHERE user_id = $1 AND is_completed = true AND completed_at >= NOW() - INTERVAL '1 year'
+      ORDER BY completed_at DESC
     `;
-    const heatmapRes = await pool.query(heatmapQuery, [userId]);
-    const heatmap = heatmapRes.rows.map(r => ({
-      date: r.date,
-      count: parseInt(r.count),
-      level: Math.min(4, Math.ceil(parseInt(r.count) / 2))
-    }));
-
-    const peakFlowQuery = `
-      SELECT EXTRACT(HOUR FROM completed_at) as hour, COUNT(*) as count
-      FROM tasks
-      WHERE user_id = $1 AND is_completed = true
-      GROUP BY hour
-      ORDER BY hour
-    `;
-    const peakFlowRes = await pool.query(peakFlowQuery, [userId]);
-    const peakFlow = Array(24).fill(0).map((_, i) => {
-        const found = peakFlowRes.rows.find(r => parseInt(r.hour) === i);
-        return { hour: i, count: found ? parseInt(found.count) : 0 };
-    });
-
-    const focusStatsQuery = `
-      SELECT COUNT(*) as total_sessions, COALESCE(SUM(duration_seconds), 0) as total_seconds
-      FROM focus_sessions WHERE user_id = $1
-    `;
-    const focusRes = await pool.query(focusStatsQuery, [userId]);
-    
-    const categoryQuery = `
-      SELECT category, COUNT(*) as count
-      FROM tasks 
-      WHERE user_id = $1 AND is_completed = true
-      GROUP BY category
-      ORDER BY count DESC
-    `;
-    const catRes = await pool.query(categoryQuery, [userId]);
-    
-    let totalCompleted = 0;
-    const counts = {};
-
-    catRes.rows.forEach(row => {
-        const cat = row.category ? row.category.trim().toUpperCase() : 'OTHERS';
-        const count = parseInt(row.count);
-        counts[cat] = (counts[cat] || 0) + count;
-        totalCompleted += count;
-    });
-
-    const distribution = Object.entries(counts)
-        .map(([name, count]) => ({
-            name: name.charAt(0).toUpperCase() + name.slice(1).toLowerCase(),
-            count: count,
-            percent: totalCompleted > 0 ? Math.round((count / totalCompleted) * 100) : 0
-        }))
-        .sort((a, b) => b.count - a.count);
+    const { rows: completedTasks } = await pool.query(tasksQuery, [userId]);
 
     return res.json({
-        heatmap,
-        peakFlow,
-        distribution, 
-        totalSessions: parseInt(focusRes.rows[0].total_sessions),  
-        totalMinutes: Math.round(parseInt(focusRes.rows[0].total_seconds) / 60) 
+        completedTasks: completedTasks.map(t => ({
+          completedAt: t.completed_at,
+          category: t.category ? t.category.trim().toUpperCase() : 'OTHERS'
+        }))
     });
   } catch (err) { 
       console.error("❌ ANALYTICS ERROR:", err);

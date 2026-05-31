@@ -51,30 +51,41 @@ export default function AppLayout() {
     return saved ? new Set(JSON.parse(saved)) : new Set();
   });
 
-  // 🔥 NEW: System Theme Monitor (Ignores site theme for Logo)
-  const [isSystemDark, setIsSystemDark] = useState(() => 
-    window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-  );
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = (e) => setIsSystemDark(e.matches);
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, []);
-
-  const currentLogo = isSystemDark ? LogoLight : LogoDark;
+  // 🔥 FIXED: Logo follows the active application theme
+  const currentLogo = theme === 'dark' ? LogoLight : LogoDark;
 
   // 🔥 STRICT FIX: Ensure NO "?" ever appears. Fallback to 'A' (Actdone) if name/email are missing during sync.
   const userInitial = (user?.name?.trim() || user?.email?.trim() || "A").charAt(0).toUpperCase();
 
-  // 🔥 NEW: Dynamic Favicon Switcher (Strictly System Based)
+  // 🔥 NEW: Dynamic Favicon Switcher (Strictly Browser/System Based)
   useEffect(() => {
-    const favicon = document.getElementById("favicon");
-    if (favicon) {
-      favicon.href = currentLogo;
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    
+    const updateFavicon = () => {
+      const isBrowserDark = mediaQuery.matches;
+      const favicon = document.getElementById("favicon");
+      if (favicon) {
+        favicon.href = isBrowserDark ? LogoLight : LogoDark;
+      }
+    };
+
+    updateFavicon(); // Set initial favicon based on current browser preference
+
+    // Dynamically react if the browser/OS theme changes
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', updateFavicon);
+    } else {
+      mediaQuery.addListener(updateFavicon);
     }
-  }, [currentLogo]);
+    
+    return () => {
+      if (mediaQuery.removeEventListener) {
+        mediaQuery.removeEventListener('change', updateFavicon);
+      } else {
+        mediaQuery.removeListener(updateFavicon);
+      }
+    };
+  }, []);
 
   useKeyboardShortcuts([
     { key: "l", ctrlCmd: true, action: () => setIsCreateModalOpen(true) },

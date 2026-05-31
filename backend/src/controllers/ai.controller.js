@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { env } from "../config/env.js";
+import { pool } from '../config/db.js';
 
 // Initialize Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -176,3 +177,86 @@ export async function getAiUsage(req, res, next) {
     next(error);
   }
 }
+
+export async function getDailyBriefing(req, res, next) {
+  try {
+    const userId = req.user.id;
+    
+    // 1. Get user name
+    const userRes = await pool.query('SELECT name FROM users WHERE id = $1', [userId]);
+    const userName = userRes.rows[0]?.name || "Productivity Maker";
+
+    // 2. Fetch completed tasks from last 24 hours (using standard completed_at time)
+    const completedTasksQuery = `
+      SELECT title, category
+      FROM tasks
+      WHERE user_id = $1 AND is_completed = true AND completed_at >= NOW() - INTERVAL '24 hours'
+      ORDER BY completed_at DESC
+    `;
+    const completedTasksRes = await pool.query(completedTasksQuery, [userId]);
+    const completedTasks = completedTasksRes.rows;
+
+    // 3. Fetch active (incomplete) tasks
+    const activeTasksQuery = `
+      SELECT title, category, due_date
+      FROM tasks
+      WHERE user_id = $1 AND is_completed = false AND deleted_at IS NULL
+      ORDER BY due_date ASC NULLS LAST, created_at ASC
+      LIMIT 5
+    `;
+    const activeTasksRes = await pool.query(activeTasksQuery, [userId]);
+    const activeTasks = activeTasksRes.rows;
+
+    // 4. Fetch yesterday's focus session minutes
+    const focusQuery = `
+      SELECT COALESCE(SUM(minutes_focused), 0)::int as minutes
+      FROM focus_sessions
+      WHERE user_id = $1 AND status IN ('COMPLETED', 'PARTIAL') AND created_at >= NOW() - INTERVAL '24 hours'
+    `;
+    const focusRes = await pool.query(focusQuery, [userId]);
+    const focusMinutes = focusRes.rows[0]?.minutes || 0;
+
+    // 5. Generate prompt for Gemini
+    let completedText = completedTasks.length > 0
+      ? completedTasks.map(t => `"${t.title}" (${t.category.toLowerCase()})`).join(', ')
+      : "no completed tasks";
+      
+    let activeText = activeTasks.length > 0
+      ? activeTasks.map(t => `"${t.title}" (${t.category.toLowerCase()})`).join(', ')
+      : "no urgent tasks listed (they can add some!)";
+
+    const prompt = `
+      You are a highly supportive and professional personal productivity assistant named "ActDone Assistant".
+      Write a warm, concise, and inspiring 1-minute morning briefing script (about 120-150 words) for the user.
+      User's Name: ${userName}
+      Yesterday's focus time: ${focusMinutes} minutes.
+      Tasks completed in last 24 hours: ${completedText}.
+      Current tasks to focus on: ${activeText}.
+      
+      Format rules:
+      - Write it as a clean, conversational monologue meant to be read aloud by text-to-speech.
+      - Start with a pleasant greeting, referring to the current time if appropriate, or a generic warm opening.
+      - Summarize and celebrate their achievements from the last 24 hours. If they did not complete tasks, encourage them that today is a fresh opportunity.
+      - Smoothly transition to their main priorities for today, highlight their tasks, and suggest they block out time or use the Pomodoro timer.
+      - End with a powerful, inspiring closing statement to boost their motivation!
+      - Do NOT use markdown bolding (like **text**), bullet points, list numbers, or asterisks. Keep it strictly raw paragraph text.
+    `;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const script = response.text().trim();
+
+    return res.json({
+      script,
+      userName,
+      completedCount: completedTasks.length,
+      activeCount: activeTasks.length,
+      focusMinutes,
+      completedTasks: completedTasks.map(t => ({ title: t.title, category: t.category })),
+      activeTasks: activeTasks.map(t => ({ title: t.title, category: t.category, dueDate: t.due_date }))
+    });
+  } catch (err) {
+    console.error("Failed to generate morning briefing:", err);
+    return res.status(500).json({ message: "Failed to generate your daily briefing. Please try again." });
+  }
+}

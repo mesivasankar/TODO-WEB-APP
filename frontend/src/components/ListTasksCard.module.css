@@ -868,16 +868,31 @@
 .rdpCustom {
   --rdp-cell-size: 34px !important;
   --rdp-caption-font-size: 14px !important;
-  --rdp-accent-color: var(--primary, #3b82f6) !important;
+  --rdp-accent-color: var(--text-primary) !important;
   --rdp-background-color: var(--surface-3) !important;
   --rdp-day-height: 34px !important;
   --rdp-day-width: 34px !important;
   margin: 0 !important;
 }
 
+@media (max-width: 380px) {
+  .rdpCustom {
+    --rdp-cell-size: 28px !important;
+    --rdp-day-height: 28px !important;
+    --rdp-day-width: 28px !important;
+    --rdp-caption-font-size: 12px !important;
+  }
+  .dropdownFixed {
+    padding: 4px !important;
+  }
+  .calendarWrapper {
+    padding: 6px !important;
+  }
+}
+
 .rdpCustom :global(.rdp-day_selected) {
-  background-color: var(--primary, #3b82f6) !important;
-  color: white !important;
+  background-color: var(--text-primary) !important;
+  color: var(--bg) !important;
   font-weight: bold;
 }
 
@@ -912,7 +927,8 @@
 }
 
 .rdpCustom :global(.rdp-day_today) {
-  color: var(--primary, #3b82f6) !important;
+  color: var(--text-primary) !important;
+  text-decoration: underline;
   font-weight: bold;
 }
 
@@ -1077,7 +1093,7 @@
 }
 
 .bottomSheetInputTitle:focus {
-  border-color: var(--primary, #3b82f6);
+  border-color: var(--text-primary);
 }
 
 .bottomSheetInputDetails {
@@ -1271,7 +1287,7 @@
 }
 
 .activeSortItem {
-  color: var(--primary, #3b82f6) !important;
+  color: var(--text-primary) !important;
   font-weight: 600;
-  background-color: var(--surface-3);
+  background-color: rgba(255, 255, 255, 0.05);
 }

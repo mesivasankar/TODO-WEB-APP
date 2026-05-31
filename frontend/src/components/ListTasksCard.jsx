@@ -168,7 +168,7 @@ function SortableTaskWrapper({ task, items, children, disabled }) {
       linePosition = activeIndex < overIndex ? 'bottom' : 'top';
     }
   }
-  const style = { opacity: isDragging ? 0.3 : 1, position: "relative", touchAction: "none" };
+  const style = { opacity: isDragging ? 0.3 : 1, position: "relative", touchAction: isDragging ? "none" : "auto" };
   return (
     <motion.div
       ref={setNodeRef}
@@ -207,7 +207,39 @@ const DatePickerSelector = ({ value, onChange }) => {
   const toggleMenu = () => {
     if (!isOpen && triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
-      setCoords({ top: rect.bottom, left: rect.left });
+      const viewportHeight = window.innerHeight;
+      const viewportWidth = window.innerWidth;
+
+      // Estimate the calendar dimensions dynamically based on screen width
+      const isMobileScreen = viewportWidth <= 380;
+      const calendarHeight = isMobileScreen ? 310 : 360;
+      const calendarWidth = isMobileScreen ? 260 : 340;
+
+      let top = rect.bottom;
+      let left = rect.left;
+
+      // If the calendar overflows the bottom of the viewport, try opening it above the input field
+      if (rect.bottom + calendarHeight > viewportHeight) {
+        if (rect.top - calendarHeight > 0) {
+          // Subtract 8 because DropdownPortal adds 8 in style
+          top = rect.top - calendarHeight - 16;
+        } else {
+          // If there isn't enough room above either, clamp to the viewport boundary
+          top = Math.max(8, viewportHeight - calendarHeight - 24);
+        }
+      }
+
+      // If the calendar overflows the right edge of the viewport, adjust left
+      if (left + calendarWidth > viewportWidth) {
+        left = Math.max(8, viewportWidth - calendarWidth - 8);
+      }
+
+      // Also ensure it does not overflow the left edge of the viewport
+      if (left < 8) {
+        left = 8;
+      }
+
+      setCoords({ top, left });
     }
     setIsOpen(!isOpen);
   };
@@ -265,7 +297,7 @@ const DatePill = ({ value, onClear, forceToday = false, isOverdue = false }) => 
     <div className={`${styles.deadlinePill} ${isOverdue ? styles.overduePill : ""}`}>
       <CalendarIcon />
       <span>{formatSmartDate(value, forceToday)}</span>
-      {!(forceToday || isOverdue) && <button className={styles.clearBtn} onClick={(e) => { e.preventDefault(); onClear(); }} title="Clear date">✕</button>}
+      {!forceToday && <button className={styles.clearBtn} onClick={(e) => { e.preventDefault(); onClear(); }} title="Clear date">✕</button>}
     </div>
   );
 };
@@ -297,9 +329,15 @@ export default function ListTasksCard({ list, onRenameList, onDeleteList, isSing
   const [aiQuota, setAiQuota] = useState(null);
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
 
+  const isTouchScreen = typeof window !== 'undefined' && (
+    "ontouchstart" in window ||
+    navigator.maxTouchPoints > 0 ||
+    window.matchMedia("(pointer: coarse)").matches
+  );
+
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
+    ...(!isTouchScreen ? [useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } })] : []),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
   
@@ -860,8 +898,6 @@ export default function ListTasksCard({ list, onRenameList, onDeleteList, isSing
     if (hasCompletedTasks && !isSpecialMode) {
       animationData = CompletedAnimation;
       emptyText = "All tasks completed!";
-    } else if (isStarredMode) {
-      animationData = StarAnimation;
     }
   }
 
