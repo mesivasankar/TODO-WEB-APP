@@ -1208,26 +1208,28 @@ export default function ListTasksCard({ list, onRenameList, onDeleteList, isSing
                 </span>
               </button>
               {otherLists.length > 0 && (
-                <div className={styles.menuItemWithSubmenu}>
-                  <span className={styles.menuIconWrapper}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                    </svg>
-                  </span>
-                  <span>Move to list</span>
-                  <span className={styles.submenuArrow}>▶</span>
-                  <div className={styles.subMenu}>
+                <>
+                  <div className={styles.menuSectionHeader}>
+                    <span className={styles.menuIconWrapper}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                      </svg>
+                    </span>
+                    <span>Move to list</span>
+                  </div>
+                  <div className={styles.menuSubSection}>
                     {otherLists.map(l => (
                       <button 
                         key={l.id} 
-                        className={styles.subMenuItem} 
+                        className={styles.subMenuItemInline} 
                         onClick={() => handleMoveTask(openMenuTaskId, l)}
                       >
-                        {l.name}
+                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)', marginRight: '4px' }}>•</span>
+                        <span>{l.name}</span>
                       </button>
                     ))}
                   </div>
-                </div>
+                </>
               )}
             </>
           )}

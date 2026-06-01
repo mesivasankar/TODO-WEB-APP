@@ -1300,74 +1300,51 @@
 }
 
 /* ================= MOVE TO LIST SUB-MENU ================= */
-.menuItemWithSubmenu {
-  position: relative !important;
+.menuSectionHeader {
   display: flex;
   align-items: center;
   gap: 8px;
+  padding: 8px 12px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
   width: 100%;
-  background: none;
-  border: none;
-  color: var(--text-primary);
-  padding: 10px 12px;
-  text-align: left;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background 0.1s;
   box-sizing: border-box;
 }
 
-.menuItemWithSubmenu:hover {
-  background: var(--surface-3);
-}
-
-.submenuArrow {
-  margin-left: auto;
-  font-size: 8px;
-  color: var(--text-secondary);
-}
-
-.subMenu {
-  position: absolute !important;
-  left: -206px !important; /* Place to the left since main menu is right-aligned */
-  top: -6px !important; /* Align exactly with the top padding boundary of main menu */
-  min-width: 200px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 6px;
-  opacity: 0;
-  transform: translateX(6px) scale(0.98);
-  pointer-events: none;
-  transition: opacity 120ms ease, transform 120ms ease;
-  z-index: 10000;
+.menuSubSection {
   display: flex;
   flex-direction: column;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  gap: 2px;
+  width: 100%;
+  padding: 0 6px;
+  box-sizing: border-box;
 }
 
-.menuItemWithSubmenu:hover .subMenu {
-  opacity: 1;
-  transform: translateX(0) scale(1);
-  pointer-events: auto;
-}
-
-.subMenuItem {
+.subMenuItemInline {
   width: 100%;
   background: none;
   border: none;
   color: var(--text-primary);
-  padding: 8px 10px;
+  padding: 8px 12px;
   text-align: left;
   border-radius: 6px;
   cursor: pointer;
   font-size: 13px;
   transition: background 0.1s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  box-sizing: border-box;
 }
 
-.subMenuItem:hover {
+.subMenuItemInline:hover {
   background: var(--surface-3);
+  color: var(--primary);
 }
 
 /* ================= LIST SELECTOR PILL & INLINE EDITOR ================= */
