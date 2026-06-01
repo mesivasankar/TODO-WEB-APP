@@ -24,9 +24,9 @@ const modalVariants = {
   },
   exit: { opacity: 0, scale: 0.95, transition: { duration: 0.2 } }
 };
-
 export default function DailyBriefingModal({ onClose }) {
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [data, setData] = useState(null);
   const [activeTab, setActiveTab] = useState("podcast"); // "podcast" or "summary"
 
@@ -44,33 +44,41 @@ export default function DailyBriefingModal({ onClose }) {
   const utteranceRef = useRef(null);
 
   // 1. Fetch briefing data from backend
-  useEffect(() => {
-    async function load() {
-      try {
-        const res = await getDailyBriefing();
-        setData(res);
-        
-        // Typewriter animation trigger
-        if (res.script) {
-          let charIndex = 0;
-          const interval = setInterval(() => {
-            setVisibleText(prev => prev + res.script.charAt(charIndex));
-            charIndex++;
+  const loadBriefing = async () => {
+    setLoading(true);
+    setError(null);
+    setVisibleText("");
+    setData(null);
+    try {
+      const res = await getDailyBriefing();
+      setData(res);
+      
+      // Typewriter animation trigger
+      if (res.script) {
+        let charIndex = 0;
+        const interval = setInterval(() => {
+          setVisibleText(prev => {
             if (charIndex >= res.script.length) {
               clearInterval(interval);
+              return prev;
             }
-          }, 15);
-          return () => clearInterval(interval);
-        }
-      } catch (err) {
-        console.error("Failed to load morning briefing", err);
-      } finally {
-        setLoading(false);
+            const nextChar = res.script.charAt(charIndex);
+            charIndex++;
+            return prev + nextChar;
+          });
+        }, 15);
       }
+    } catch (err) {
+      console.error("Failed to load morning briefing", err);
+      setError(err.message || "Failed to load morning briefing");
+    } finally {
+      setLoading(false);
     }
-    load();
-  }, []);
+  };
 
+  useEffect(() => {
+    loadBriefing();
+  }, []);
   // 2. Load and initialize speech voices (UK English Female auto-selected)
   useEffect(() => {
     const loadVoices = () => {
@@ -146,7 +154,7 @@ export default function DailyBriefingModal({ onClose }) {
       const midY = height / 2;
 
       // Draw 3 layered waves for a premium visualizer effect
-      const isLightTheme = document.documentElement.getAttribute('data-theme') === 'light';
+      const isLightTheme = document.body.getAttribute('data-theme') === 'light';
       const waveConfigs = [
         { strokeStyle: isLightTheme ? "rgba(0, 0, 0, 0.35)" : "rgba(255, 255, 255, 0.35)", freq: 0.015, ampMult: 1 },
         { strokeStyle: isLightTheme ? "rgba(0, 0, 0, 0.15)" : "rgba(255, 255, 255, 0.15)", freq: 0.025, ampMult: 0.6 },
@@ -265,7 +273,14 @@ export default function DailyBriefingModal({ onClose }) {
         >
           <header className={styles.header}>
             <button className={styles.backButton} onClick={onClose}>← Close</button>
-            <h2 className={styles.title}>🎙️ ActDone Briefing</h2>
+            <h2 className={styles.title} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-secondary)' }}>
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                <line x1="12" x2="12" y1="19" y2="22"></line>
+              </svg>
+              ActDone Briefing
+            </h2>
             <div style={{ width: 60 }}></div> 
           </header>
 
@@ -274,28 +289,54 @@ export default function DailyBriefingModal({ onClose }) {
               <div className={styles.spinner}></div>
               <p className={styles.loadingText}>Crafting your morning briefing...</p>
             </div>
+          ) : error ? (
+            <div className={styles.errorContainer}>
+              <div className={styles.errorIcon}>
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--err-msg, #ff5252)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
+                  <line x1="12" x2="12" y1="9" y2="13"></line>
+                  <line x1="12" x2="12.01" y1="17" y2="17"></line>
+                </svg>
+              </div>
+              <h3 className={styles.errorTitle}>AI Briefing Issue</h3>
+              <p className={styles.errorText}>{error}</p>
+              <button className={styles.retryBtn} onClick={loadBriefing}>Try Again</button>
+            </div>
           ) : (
-            <div className={styles.content}>
-              
+            <div className={styles.content}>              
               {/* Segmented Display Mode Tabs */}
               <div className={styles.segmentedToggle}>
                 <button 
                   className={`${styles.toggleTab} ${activeTab === "podcast" ? styles.activeTab : ""}`}
                   onClick={() => {
                     setActiveTab("podcast");
-                    // Stop audio when switching tabs? Or keep playing? Let's stop to be clean, or let it play
                   }}
                 >
-                  🎧 Audio Briefing
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
+                      <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
+                    </svg>
+                    Audio Briefing
+                  </span>
                 </button>
                 <button 
                   className={`${styles.toggleTab} ${activeTab === "summary" ? styles.activeTab : ""}`}
                   onClick={() => {
                     setActiveTab("summary");
-                    handleStop(); // Stop reading when switching to text view
+                    handleStop();
                   }}
                 >
-                  📝 Text Summary
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                      <line x1="16" y1="13" x2="8" y2="13"></line>
+                      <line x1="16" y1="17" x2="8" y2="17"></line>
+                      <line x1="10" y1="9" x2="8" y2="9"></line>
+                    </svg>
+                    Text Summary
+                  </span>
                 </button>
               </div>
 
@@ -304,63 +345,75 @@ export default function DailyBriefingModal({ onClose }) {
                   ============================================== */}
               {activeTab === "podcast" && (
                 <div className={styles.podcastLayout}>
-                  <div className={styles.decalContainer}>
-                    <motion.div 
-                      className={`${styles.discDecal} ${isPlaying && !isPaused ? styles.discSpinning : ""}`}
-                      animate={{ rotate: isPlaying && !isPaused ? 360 : 0 }}
-                      transition={{ 
-                        repeat: Infinity, 
-                        duration: 12, 
-                        ease: "linear"
-                      }}
-                    >
-                      <div className={styles.discInnerRing}>
-                        <div className={styles.discCenter}></div>
-                      </div>
-                    </motion.div>
-                    
-                    {/* Visualizer Wave */}
-                    <canvas 
-                      ref={canvasRef} 
-                      className={styles.visualizerCanvas} 
-                      width={380} 
-                      height={100}
-                    />
-                  </div>
-
-                  {/* Audio Controls */}
-                  <div className={styles.audioControls}>
-                    <div className={styles.controlRow}>
-                      {/* Play/Pause */}
-                      <button 
-                        className={styles.playButton} 
-                        onClick={handlePlayPause}
-                        title={isPlaying && !isPaused ? "Pause Briefing" : "Play Briefing"}
+                  <div className={styles.podcastCard}>
+                    <div className={styles.decalContainer}>
+                      <motion.div 
+                        className={`${styles.discDecal} ${isPlaying && !isPaused ? styles.discSpinning : ""}`}
+                        animate={{ rotate: isPlaying && !isPaused ? 360 : 0 }}
+                        transition={{ 
+                          repeat: Infinity, 
+                          duration: 12, 
+                          ease: "linear"
+                        }}
                       >
-                        {isPlaying && !isPaused ? (
-                          // Pause Icon
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"></rect><rect x="14" y="4" width="4" height="16" rx="1"></rect></svg>
-                        ) : (
-                          // Play Icon
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
-                        )}
-                      </button>
-
-                      {/* Stop */}
-                      {isPlaying && (
-                        <button 
-                          className={styles.stopButton} 
-                          onClick={handleStop}
-                          title="Stop Briefing"
-                        >
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"></rect></svg>
-                        </button>
-                      )}
+                        <div className={styles.discInnerRing}>
+                          <div className={styles.discCenter}></div>
+                        </div>
+                      </motion.div>
+                      
+                      {/* Visualizer Wave */}
+                      <canvas 
+                        ref={canvasRef} 
+                        className={styles.visualizerCanvas} 
+                        width={380} 
+                        height={100}
+                      />
                     </div>
+
+                    {/* Audio Controls */}
+                    <div className={styles.audioControls}>
+                      <div className={styles.controlRow}>
+                        {/* Play/Pause */}
+                        <button 
+                          className={styles.playButton} 
+                          onClick={handlePlayPause}
+                          title={isPlaying && !isPaused ? "Pause Briefing" : "Play Briefing"}
+                        >
+                          {isPlaying && !isPaused ? (
+                            // Pause Icon
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"></rect><rect x="14" y="4" width="4" height="16" rx="1"></rect></svg>
+                          ) : (
+                            // Play Icon
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
+                          )}
+                        </button>
+
+                        {/* Stop */}
+                        {isPlaying && (
+                          <button 
+                            className={styles.stopButton} 
+                            onClick={handleStop}
+                            title="Stop Briefing"
+                          >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"></rect></svg>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    {/* Quota Indicator */}
+                    {data && (
+                      <div className={styles.quotaIndicator}>
+                        <span className={styles.quotaDot} style={{ backgroundColor: data.dailyRemaining > 0 ? '#10b981' : '#ef4444' }} />
+                        <span className={styles.quotaText}>
+                          {data.isProduction 
+                            ? `AI Daily Quota: ${data.dailyRemaining} of ${data.dailyLimit} remaining` 
+                            : `Daily Quota: Unlimited (Local Dev Mode)`}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
-
               {/* ==============================================
                   📝 PORT 2: TEXT SUMMARY MODE
                   ============================================== */}
@@ -387,7 +440,13 @@ export default function DailyBriefingModal({ onClose }) {
                     {/* Left Column: Wins & Priorities */}
                     <div className={styles.gridColumn}>
                       <div className={styles.dashboardCard}>
-                        <h4 className={styles.cardHeader}>🌅 Yesterday's Accomplishments</h4>
+                        <h4 className={styles.cardHeader} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-secondary)' }}>
+                            <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path>
+                            <path d="m9 12 2 2 4-4"></path>
+                          </svg>
+                          Yesterday's Accomplishments
+                        </h4>
                         {data?.completedTasks && data.completedTasks.length > 0 ? (
                           <div className={styles.taskList}>
                             {data.completedTasks.map((t, idx) => (
@@ -403,7 +462,14 @@ export default function DailyBriefingModal({ onClose }) {
                       </div>
 
                       <div className={styles.dashboardCard} style={{ marginTop: "16px" }}>
-                        <h4 className={styles.cardHeader}>🎯 Today's Target Priorities</h4>
+                        <h4 className={styles.cardHeader} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-secondary)' }}>
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <circle cx="12" cy="12" r="6"></circle>
+                            <circle cx="12" cy="12" r="2"></circle>
+                          </svg>
+                          Today's Target Priorities
+                        </h4>
                         {data?.activeTasks && data.activeTasks.length > 0 ? (
                           <div className={styles.taskList}>
                             {data.activeTasks.map((t, idx) => (
@@ -427,7 +493,14 @@ export default function DailyBriefingModal({ onClose }) {
                     {/* Right Column: AI Script Reader Block */}
                     <div className={styles.gridColumn}>
                       <div className={`${styles.dashboardCard} ${styles.growthCard}`}>
-                        <h4 className={styles.cardHeader}>💡 Daily Briefing & Advice</h4>
+                        <h4 className={styles.cardHeader} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-secondary)' }}>
+                            <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A5 5 0 0 0 8 8c0 1 .3 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"></path>
+                            <path d="M9 18h6"></path>
+                            <path d="M10 22h4"></path>
+                          </svg>
+                          Daily Briefing & Advice
+                        </h4>
                         <blockquote className={styles.quoteBlock}>
                           <svg className={styles.quoteIcon} viewBox="0 0 24 24" fill="currentColor">
                             <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-4.995 2.638-4.995 5.858 0 .813.533 1.344 1.344 1.344 1.373 0 2.656 1.109 2.656 2.656 0 1.93-1.611 3.532-3.532 3.532-1.921 0-5.451-1.373-5.451-5.451h-.001zm-10.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-4.996 2.638-4.996 5.858 0 .813.533 1.344 1.344 1.344 1.373 0 2.656 1.109 2.656 2.656 0 1.93-1.611 3.532-3.532 3.532-1.92 0-5.451-1.373-5.451-5.451h-.001z"/>

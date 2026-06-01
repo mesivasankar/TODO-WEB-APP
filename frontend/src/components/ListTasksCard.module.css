@@ -1291,3 +1291,169 @@
   font-weight: 600;
   background-color: rgba(255, 255, 255, 0.05);
 }
+
+.subMenuSection {
+  max-height: 120px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ================= MOVE TO LIST SUB-MENU ================= */
+.menuItemWithSubmenu {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  padding: 10px 12px;
+  text-align: left;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.1s;
+}
+
+.menuItemWithSubmenu:hover {
+  background: var(--surface-3);
+}
+
+.submenuArrow {
+  margin-left: auto;
+  font-size: 8px;
+  color: var(--text-secondary);
+}
+
+.subMenu {
+  position: absolute;
+  left: -206px; /* Place to the left since main menu is right-aligned */
+  top: 0;
+  min-width: 200px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 6px;
+  opacity: 0;
+  transform: translateX(6px) scale(0.98);
+  pointer-events: none;
+  transition: opacity 120ms ease, transform 120ms ease;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.menuItemWithSubmenu:hover .subMenu {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+  pointer-events: auto;
+}
+
+.subMenuItem {
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  padding: 8px 10px;
+  text-align: left;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.1s;
+}
+
+.subMenuItem:hover {
+  background: var(--surface-3);
+}
+
+/* ================= LIST SELECTOR PILL & INLINE EDITOR ================= */
+.listSelectorPillContainer {
+  position: relative;
+  margin-top: 8px;
+  display: inline-block;
+}
+
+.listSelectorPill {
+  background: var(--surface-3);
+  border-radius: 999px;
+  padding: 4px 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-primary);
+  font-size: 12px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  line-height: 1;
+}
+
+.listSelectorPill:hover {
+  background: var(--surface-4);
+  border-color: var(--primary);
+}
+
+.pillArrow {
+  font-size: 8px;
+  color: var(--text-secondary);
+  transition: transform 0.2s ease;
+}
+
+.listSelectorDropdown {
+  position: absolute;
+  bottom: 100%; /* Open UPWARDS! */
+  left: 0;
+  margin-bottom: 6px;
+  min-width: 180px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  z-index: 10001;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.15s ease;
+}
+
+.listSelectorDropdownHeader {
+  padding: 6px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+
+.listSelectorDropdownItem {
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  padding: 8px 10px;
+  text-align: left;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.1s;
+}
+
+.listSelectorDropdownItem:hover {
+  background: var(--surface-3);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

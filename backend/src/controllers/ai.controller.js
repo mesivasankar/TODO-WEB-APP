@@ -4,8 +4,8 @@ import { pool } from '../config/db.js';
 
 // Initialize Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-// Use the standard recommended Gemini 2.5 Flash Lite model (compatible with newer keys)
-const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+// Use the standard recommended Gemini 2.5 Flash model (compatible with newer keys and provides higher free-tier quotas)
+const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
 /* ============================================================
    🛑 RATE LIMITING SYSTEM (In-Memory)
@@ -178,9 +178,24 @@ export async function getAiUsage(req, res, next) {
   }
 }
 
+
 export async function getDailyBriefing(req, res, next) {
   try {
     const userId = req.user.id;
+
+    // 🔥 STEP 0: Validate Gemini API Key (support standard AIzaSy and new AQ. prefixes)
+    const apiKey = process.env.GEMINI_API_KEY || "";
+    if (!apiKey || (!apiKey.startsWith("AIzaSy") && !apiKey.startsWith("AQ."))) {
+      return res.status(403).json({
+        message: "Your Gemini API key is missing or invalid (it should start with 'AIzaSy' or 'AQ.'). Please generate a new free key at https://aistudio.google.com/ and set GEMINI_API_KEY in your backend .env file."
+      });
+    }
+
+    // 🔥 STEP 1: Check Rate Limits
+    const limitCheck = checkRateLimit(userId);
+    if (!limitCheck.allowed) {
+      return res.status(429).json({ message: limitCheck.error });
+    }
     
     // 1. Get user name
     const userRes = await pool.query('SELECT name FROM users WHERE id = $1', [userId]);
@@ -246,6 +261,9 @@ export async function getDailyBriefing(req, res, next) {
     const response = await result.response;
     const script = response.text().trim();
 
+    const userUsage = usageTracker.get(userId) || { dayCount: 0 };
+    const remaining = Math.max(0, RATE_LIMITS.DAILY_LIMIT - userUsage.dayCount);
+
     return res.json({
       script,
       userName,
@@ -253,10 +271,36 @@ export async function getDailyBriefing(req, res, next) {
       activeCount: activeTasks.length,
       focusMinutes,
       completedTasks: completedTasks.map(t => ({ title: t.title, category: t.category })),
-      activeTasks: activeTasks.map(t => ({ title: t.title, category: t.category, dueDate: t.due_date }))
+      activeTasks: activeTasks.map(t => ({ title: t.title, category: t.category, dueDate: t.due_date })),
+      dailyLimit: RATE_LIMITS.DAILY_LIMIT,
+      dailyRemaining: env.isProduction ? remaining : RATE_LIMITS.DAILY_LIMIT,
+      isProduction: env.isProduction
     });
   } catch (err) {
     console.error("Failed to generate morning briefing:", err);
+    
+    // Proactive diagnostic checks for revoked/leaked/invalid keys
+    const errorMsg = err.message || "";
+    if (
+      err.status === 400 ||
+      err.status === 403 ||
+      err.status === 404 ||
+      errorMsg.includes("API key was reported as leaked") ||
+      errorMsg.includes("API key not found") ||
+      errorMsg.includes("API_KEY_INVALID") ||
+      errorMsg.includes("not found for API version") ||
+      errorMsg.includes("API key")
+    ) {
+      return res.status(403).json({
+        message: "Your Gemini API key is invalid, revoked, or has expired. Please generate a new free key at https://aistudio.google.com/ and update GEMINI_API_KEY in your backend .env file."
+      });
+    }
+
+    // Handle the specific "Quota Exceeded" error from Google
+    if (err.status === 429 || errorMsg.includes("429")) {
+      return res.status(429).json({ message: "System busy or rate limit reached. Please try again later." });
+    }
+
     return res.status(500).json({ message: "Failed to generate your daily briefing. Please try again." });
   }
 }

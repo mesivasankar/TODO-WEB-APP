@@ -6,6 +6,8 @@ import ListHidden from "../assets/animations/Lists are Hidden.json";
 import ListTasksCard from "../components/ListTasksCard";
 import styles from "./AllTasksPage.module.css";
 import { AnimatePresence, motion } from "framer-motion";
+import { updateTask, reorderTasks } from "../api/tasksApi";
+import { useToast } from "../contexts/ToastContext";
 
 import {
   DndContext,
@@ -28,12 +30,20 @@ import {
 } from "@dnd-kit/sortable";
 
 function SortableCard({ list, items, children }) {
-  const { attributes, listeners, setNodeRef, isDragging } = useSortable({ id: list.id });
+  const { attributes, listeners, setNodeRef, isDragging } = useSortable({
+    id: list.id,
+    data: {
+      type: 'list',
+      listId: list.id,
+      list: list
+    }
+  });
   const { active, over } = useDndContext();
   const isOver = over?.id === list.id;
+  const isActiveList = active?.data.current?.type === 'list' || !active?.data.current?.type;
   
   let linePosition = '';
-  if (isOver && active && items) {
+  if (isOver && active && isActiveList && items) {
       const activeIndex = items.findIndex(i => i.id === active.id);
       const overIndex = items.findIndex(i => i.id === list.id);
       linePosition = activeIndex < overIndex ? 'right' : 'left';
@@ -41,7 +51,7 @@ function SortableCard({ list, items, children }) {
 
   return (
     <div ref={setNodeRef} className={styles.cardContainer} style={{ opacity: isDragging ? 0.25 : 1 }}>
-      {isOver && !isDragging && (
+      {isOver && !isDragging && isActiveList && (
           <div className={`${styles.insertionLine} ${linePosition === 'right' ? styles.lineRight : styles.lineLeft}`} />
       )}
       <motion.div
@@ -62,7 +72,7 @@ function SortablePill({ list, activeListId, taskCounts, scrollToCard }) {
     transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
     transition,
     opacity: isDragging ? 0.4 : 1,
-    touchAction: isDragging ? "none" : "auto"
+    touchAction: "none"
   };
 
   return (
@@ -99,6 +109,8 @@ export default function AllTasksPage() {
     openCreateModal 
   } = useOutletContext();
 
+  const { showUndoToast } = useToast();
+
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 1024);
   const scrollContainerRef = useRef(null);
   const chipNavRef = useRef(null);
@@ -117,7 +129,8 @@ export default function AllTasksPage() {
   const [activeList, setActiveList] = useState(null);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
@@ -215,34 +228,204 @@ export default function AllTasksPage() {
     }
   };
 
+  const [activeDragTask, setActiveDragTask] = useState(null);
+
   function handleDragStart(event) {
-      const activeId = event.active.id;
+    const { active } = event;
+    const type = active.data.current?.type;
+
+    if (type === 'list' || !type) {
+      const activeId = active.id;
       const list = displayedLists.find(l => l.id === activeId);
       setActiveList(list);
+      setActiveDragTask(null);
+    } else if (type === 'task') {
+      const task = active.data.current?.task;
+      setActiveDragTask(task);
+      setActiveList(null);
+    }
   }
 
-  function handleDragEnd(event) {
+  async function handleDragEnd(event) {
     const { active, over } = event;
-    setActiveList(null); 
-    if (!over || active.id === over.id) return;
-    const oldIndex = displayedLists.findIndex((l) => l.id === active.id);
-    const newIndex = displayedLists.findIndex((l) => l.id === over.id);
-    const newOrder = arrayMove(displayedLists, oldIndex, newIndex);
-    
-    if (isMobile) {
-      onReorderLists(newOrder);
-    } else {
-      let selectedCursor = 0;
-      const newGlobalLists = lists.map((list) => {
-        if (selectedListIds.has(list.id)) {
-          const replacement = newOrder[selectedCursor];
-          selectedCursor++;
-          return replacement;
-        }
-        return list;
-      });
-      onReorderLists(newGlobalLists);
+    if (!over) {
+      setActiveList(null); 
+      setActiveDragTask(null);
+      return;
     }
+
+    const activeType = active.data.current?.type || 'list';
+    
+    if (activeType === 'list') {
+      if (active.id !== over.id) {
+        const oldIndex = displayedLists.findIndex((l) => l.id === active.id);
+        const newIndex = displayedLists.findIndex((l) => l.id === over.id);
+        if (oldIndex !== -1 && newIndex !== -1) {
+          const newOrder = arrayMove(displayedLists, oldIndex, newIndex);
+          
+          if (isMobile) {
+            onReorderLists(newOrder);
+          } else {
+            let selectedCursor = 0;
+            const newGlobalLists = lists.map((list) => {
+              if (selectedListIds.has(list.id)) {
+                const replacement = newOrder[selectedCursor];
+                selectedCursor++;
+                return replacement;
+              }
+              return list;
+            });
+            onReorderLists(newGlobalLists);
+          }
+        }
+      }
+    } else if (activeType === 'task') {
+      const draggedTask = active.data.current?.task;
+      if (draggedTask) {
+        const sourceListId = active.data.current?.listId;
+        const overType = over.data.current?.type;
+        
+        let targetListId = null;
+        if (overType === 'list') {
+          targetListId = over.data.current?.listId;
+        } else if (overType === 'task') {
+          targetListId = over.data.current?.listId;
+        }
+        
+        if (targetListId) {
+          // 1. RESTRICTION: Subtask should not be movable between lists!
+          const isSubtask = draggedTask.parent_task_id || draggedTask.parentTaskId;
+          if (!(isSubtask && sourceListId !== targetListId)) {
+            if (sourceListId === targetListId) {
+              if (active.id !== over.id) {
+                const siblingItems = active.data.current?.items || [];
+                const oldIndex = siblingItems.findIndex(t => t.id === active.id);
+                const newIndex = siblingItems.findIndex(t => t.id === over.id);
+                
+                if (oldIndex !== -1 && newIndex !== -1) {
+                  const reorderedTasks = arrayMove(siblingItems, oldIndex, newIndex);
+                  
+                  window.dispatchEvent(new CustomEvent('tasks-reordered', {
+                    detail: { listId: sourceListId, reorderedTasks }
+                  }));
+
+                  // Set global sync lock
+                  window.isDraggingOrSyncing = true;
+
+                  // Perform database persistent update in the background
+                  reorderTasks(sourceListId, reorderedTasks.map(t => t.id))
+                  .catch(err => {
+                    console.error("Failed to persist task order in same list", err);
+                  })
+                  .finally(() => {
+                    window.isDraggingOrSyncing = false;
+                    window.dispatchEvent(new Event('app-data-changed'));
+                  });
+                }
+              }
+            } else {
+              const sourceList = lists.find(l => l.id === sourceListId);
+              const targetList = lists.find(l => l.id === targetListId);
+              if (targetList && sourceList && (!targetList.task_sort_option || targetList.task_sort_option === 'MY_ORDER')) {
+                // Retrieve flat task array from drag context payload
+                const allSourceTasks = active.data.current?.allTasks || [];
+                const draggedTaskObj = allSourceTasks.find(t => t.id === draggedTask.id) || draggedTask;
+                const draggedSubtasks = allSourceTasks.filter(t => {
+                  const pid = t.parent_task_id || t.parentTaskId;
+                  return String(pid) === String(draggedTask.id);
+                });
+
+                // Compute target index and complete target sort-order array
+                const targetItems = over.data.current?.items || [];
+                const targetTaskIds = targetItems.map(t => t.id).filter(id => id !== draggedTask.id);
+                
+                let targetIndex = null;
+                if (overType === 'task') {
+                  const idx = targetItems.findIndex(t => t.id === over.id || t.clientKey === over.id);
+                  if (idx !== -1) {
+                    targetIndex = idx;
+                  }
+                }
+
+                // 1. Instantly dispatch optimistic move event to source and target lists
+                window.dispatchEvent(new CustomEvent('task-moved-between-lists', {
+                  detail: {
+                    task: draggedTaskObj,
+                    subtasks: draggedSubtasks,
+                    sourceListId,
+                    targetListId,
+                    targetIndex
+                  }
+                }));
+
+                // 2. Instantly show Undo Toast
+                showUndoToast(`Task moved to "${targetList.name}"`, async () => {
+                  // Instantly dispatch reverse optimistic event
+                  window.dispatchEvent(new CustomEvent('task-moved-between-lists', {
+                    detail: {
+                      task: draggedTaskObj,
+                      subtasks: draggedSubtasks,
+                      sourceListId: targetListId,
+                      targetListId: sourceListId
+                    }
+                  }));
+
+                  // Set global sync lock
+                  window.isDraggingOrSyncing = true;
+
+                  try {
+                    await updateTask(draggedTask.id, {
+                      listId: sourceList.id,
+                      category: sourceList.category
+                    });
+                  } catch (err) {
+                    console.error("Failed to undo task movement between lists", err);
+                  } finally {
+                    window.isDraggingOrSyncing = false;
+                    window.dispatchEvent(new Event('app-data-changed'));
+                  }
+                });
+
+                // Set global sync lock
+                window.isDraggingOrSyncing = true;
+
+                // 3. Make the API request in the background
+                updateTask(draggedTask.id, {
+                  listId: targetList.id,
+                  category: targetList.category
+                })
+                .then(async () => {
+                  // Always chain reorder tasks inside the target list to persist exact drop position
+                  const finalTargetIdx = (targetIndex !== null && targetIndex !== undefined) ? targetIndex : targetTaskIds.length;
+                  targetTaskIds.splice(finalTargetIdx, 0, draggedTask.id);
+                  await reorderTasks(targetList.id, targetTaskIds);
+                })
+                .catch(err => {
+                  console.error("Failed to move task between lists", err);
+                  // Rollback local state optimistically if backend request failed
+                  window.dispatchEvent(new CustomEvent('task-moved-between-lists', {
+                    detail: {
+                      task: draggedTaskObj,
+                      subtasks: draggedSubtasks,
+                      sourceListId: targetListId,
+                      targetListId: sourceListId
+                    }
+                  }));
+                })
+                .finally(() => {
+                  window.isDraggingOrSyncing = false;
+                  window.dispatchEvent(new Event('app-data-changed'));
+                });
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Synced at the very end of the drop call, batched together for instantaneous display!
+    setActiveList(null); 
+    setActiveDragTask(null);
   }
 
   function handlePillDragEnd(event) {
@@ -316,20 +499,31 @@ export default function AllTasksPage() {
                     items={displayedLists}
                   >
                     <ListTasksCard 
+                      key={`tasks-card-${list.id}`}
                       list={list} 
                       onRenameList={onRenameList} 
                       onDeleteList={onDeleteList} 
                       isSingleView={count === 1 && !isMobile}
                       onCountUpdate={onCountUpdate}
                       onSortList={onSortList}
+                      disableInternalDnd={true}
                     />
                   </SortableCard>
                 </div>
               ))}
             </AnimatePresence>
           </SortableContext>
-          <DragOverlay>
-             {activeList ? <div className={styles.dragOverlayCard}><span className={styles.overlayTitle}>{activeList.name}</span></div> : null}
+          <DragOverlay dropAnimation={null}>
+             {activeList ? (
+               <div className={styles.dragOverlayCard}>
+                 <span className={styles.overlayTitle}>{activeList.name}</span>
+               </div>
+             ) : activeDragTask ? (
+               <div className={styles.dragOverlayTask}>
+                 <div className={styles.checkbox} />
+                 <span className={styles.taskTitle}>{activeDragTask.title}</span>
+               </div>
+             ) : null}
           </DragOverlay>
         </DndContext>
       </div>

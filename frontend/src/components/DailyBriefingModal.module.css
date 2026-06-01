@@ -141,66 +141,96 @@
   align-items: center;
   gap: 24px;
   width: 100%;
-  max-width: 600px;
   margin: 0 auto;
   padding: 12px 0 24px;
+}
+
+/* Elevated glassmorphic card deck for the podcast player */
+.podcastCard {
+  background: linear-gradient(135deg, var(--surface-2) 0%, var(--surface-3) 100%);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 40px;
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .podcastCard {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.01);
 }
 
 .decalContainer {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
   position: relative;
   width: 100%;
 }
 
 /* Vinyl Disc Decal */
 .discDecal {
-  width: 140px;
-  height: 140px;
+  width: 160px;
+  height: 160px;
   border-radius: 50%;
-  background: radial-gradient(circle, #222 30%, #111 60%, #050505 100%);
+  background: radial-gradient(circle, #2a2a2a 20%, #1a1a1a 45%, #0d0d0d 70%, #050505 100%);
   border: 4px solid var(--border);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), 0 0 1px 1px rgba(255, 255, 255, 0.05) inset;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4), 0 0 1px 1px rgba(255, 255, 255, 0.05) inset;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
+  transition: box-shadow 0.3s ease;
 }
 
 /* Grooves on vinyl */
 .discDecal::before {
   content: "";
   position: absolute;
-  inset: 10px;
+  inset: 12px;
   border-radius: 50%;
-  border: 1px dashed rgba(255, 255, 255, 0.05);
+  border: 1px dashed rgba(255, 255, 255, 0.06);
+}
+
+.discDecal::after {
+  content: "";
+  position: absolute;
+  inset: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.03);
 }
 
 .discInnerRing {
-  width: 50px;
-  height: 50px;
+  width: 54px;
+  height: 54px;
   border-radius: 50%;
   background: var(--surface-3);
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2.5px solid var(--border);
+  border: 3px solid var(--border);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 .discCenter {
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   background-color: var(--surface-1);
   border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .visualizerCanvas {
   width: 100%;
-  max-width: 380px;
+  max-width: 340px;
   height: 60px;
+  margin-top: 8px;
 }
 
 /* Audio Control center */
@@ -218,8 +248,8 @@
 }
 
 .playButton {
-  width: 60px;
-  height: 60px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
   background-color: var(--text-primary);
   color: var(--bg);
@@ -228,21 +258,21 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
-  transition: all 0.2s ease;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .playButton:hover {
-  transform: scale(1.05);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
-  opacity: 0.9;
+  transform: scale(1.06);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  opacity: 0.95;
 }
 .playButton:active {
-  transform: scale(0.98);
+  transform: scale(0.97);
 }
 
 .stopButton {
-  width: 44px;
-  height: 44px;
+  width: 46px;
+  height: 46px;
   border-radius: 50%;
   background-color: var(--surface-3);
   border: 1px solid var(--border);
@@ -443,4 +473,94 @@
   margin: 0;
   position: relative;
   z-index: 1;
+}
+
+/* --- ERROR STATE --- */
+.errorContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 40px;
+  gap: 16px;
+  text-align: center;
+  max-width: 480px;
+  margin: 0 auto;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.errorIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(255, 82, 82, 0.1);
+  margin-bottom: 8px;
+}
+
+.errorTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.errorText {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+  max-width: 360px;
+}
+
+.retryBtn {
+  background-color: var(--text-primary);
+  color: var(--bg);
+  border: none;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+}
+
+.retryBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+  opacity: 0.95;
+}
+
+.retryBtn:active {
+  transform: translateY(0);
+}
+
+/* --- QUOTA INDICATOR PILL --- */
+.quotaIndicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 4px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.quotaDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.quotaText {
+  line-height: 1;
 }

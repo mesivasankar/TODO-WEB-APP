@@ -162,3 +162,37 @@
 }
 .animation { width: 260px; opacity: 0.8; }
 .text { margin-top: 16px; color: var(--text-secondary); }
+
+/* Drag Overlay for Tasks in AllTasksPage */
+.dragOverlayTask {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 400px;
+  cursor: grabbing;
+}
+
+.dragOverlayTask .checkbox {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--text-primary);
+  border-radius: 4px;
+  background: transparent;
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+.dragOverlayTask .taskTitle {
+  font-size: 14px;
+  color: var(--text-primary);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

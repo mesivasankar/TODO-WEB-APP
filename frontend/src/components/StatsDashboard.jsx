@@ -416,7 +416,7 @@ export default function StatsDashboard({ onClose }) {
                    <span className={styles.chartTitle}>
                      {activeMetric === "tasks" ? "Task Completion History" : "Focus Session History"}
                    </span>
-                   <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                   <div className={styles.chartControls}>
                      <div className={styles.metricToggle}>
                        <button 
                          className={`${styles.toggleButton} ${activeMetric === "tasks" ? styles.activeToggleButton : ""}`} 
@@ -525,7 +525,7 @@ export default function StatsDashboard({ onClose }) {
                                           animate={{ height: `${Math.max(heightPct, 4)}%` }}
                                           transition={{ delay: 0.4 + (idx * 0.02), duration: 0.5, ease: "easeOut" }}
                                           style={{ 
-                                              backgroundColor: dataPoint.count > 0 ? '#3b82f6' : 'var(--surface-3)',
+                                              backgroundColor: dataPoint.count > 0 ? 'var(--text-primary)' : 'var(--surface-3)',
                                               opacity: dataPoint.count > 0 ? 1 : 0.5
                                           }}
                                           data-tooltip-id="custom-tooltip"

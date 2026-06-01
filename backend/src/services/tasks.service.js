@@ -88,7 +88,30 @@ export async function updateTaskForUser(userId, taskId, { title, description, du
   `;
   values.push(taskId, userId);
   const { rows } = await pool.query(query, values);
-  return rows[0] || null;
+  const updatedTask = rows[0] || null;
+
+  if (updatedTask && (listId !== undefined || category !== undefined)) {
+    const subFields = [];
+    const subValues = [];
+    let subIndex = 1;
+    if (listId !== undefined) {
+      subFields.push(`list_id = $${subIndex++}`);
+      subValues.push(listId);
+    }
+    if (category !== undefined) {
+      subFields.push(`category = $${subIndex++}`);
+      subValues.push(category);
+    }
+    subFields.push('updated_at = NOW()');
+    const subQuery = `
+      UPDATE tasks SET ${subFields.join(', ')}
+      WHERE parent_task_id = $${subIndex} AND user_id = $${subIndex + 1} AND deleted_at IS NULL
+    `;
+    subValues.push(taskId, userId);
+    await pool.query(subQuery, subValues);
+  }
+
+  return updatedTask;
 }
 
 export async function restoreTaskForUser(userId, taskId) {

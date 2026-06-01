@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { useOutletContext } from "react-router-dom";
 import ReactDOM from "react-dom";
 import Lottie from "lottie-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -168,7 +169,7 @@ function SortableTaskWrapper({ task, items, children, disabled }) {
       linePosition = activeIndex < overIndex ? 'bottom' : 'top';
     }
   }
-  const style = { opacity: isDragging ? 0.3 : 1, position: "relative", touchAction: isDragging ? "none" : "auto" };
+  const style = { opacity: isDragging ? 0.3 : 1, position: "relative", touchAction: "none" };
   return (
     <motion.div
       ref={setNodeRef}
@@ -207,39 +208,7 @@ const DatePickerSelector = ({ value, onChange }) => {
   const toggleMenu = () => {
     if (!isOpen && triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
-      const viewportHeight = window.innerHeight;
-      const viewportWidth = window.innerWidth;
-
-      // Estimate the calendar dimensions dynamically based on screen width
-      const isMobileScreen = viewportWidth <= 380;
-      const calendarHeight = isMobileScreen ? 310 : 360;
-      const calendarWidth = isMobileScreen ? 260 : 340;
-
-      let top = rect.bottom;
-      let left = rect.left;
-
-      // If the calendar overflows the bottom of the viewport, try opening it above the input field
-      if (rect.bottom + calendarHeight > viewportHeight) {
-        if (rect.top - calendarHeight > 0) {
-          // Subtract 8 because DropdownPortal adds 8 in style
-          top = rect.top - calendarHeight - 16;
-        } else {
-          // If there isn't enough room above either, clamp to the viewport boundary
-          top = Math.max(8, viewportHeight - calendarHeight - 24);
-        }
-      }
-
-      // If the calendar overflows the right edge of the viewport, adjust left
-      if (left + calendarWidth > viewportWidth) {
-        left = Math.max(8, viewportWidth - calendarWidth - 8);
-      }
-
-      // Also ensure it does not overflow the left edge of the viewport
-      if (left < 8) {
-        left = 8;
-      }
-
-      setCoords({ top, left });
+      setCoords({ top: rect.bottom, left: rect.left });
     }
     setIsOpen(!isOpen);
   };
@@ -297,7 +266,7 @@ const DatePill = ({ value, onClear, forceToday = false, isOverdue = false }) => 
     <div className={`${styles.deadlinePill} ${isOverdue ? styles.overduePill : ""}`}>
       <CalendarIcon />
       <span>{formatSmartDate(value, forceToday)}</span>
-      {!forceToday && <button className={styles.clearBtn} onClick={(e) => { e.preventDefault(); onClear(); }} title="Clear date">✕</button>}
+      {!(forceToday || isOverdue) && <button className={styles.clearBtn} onClick={(e) => { e.preventDefault(); onClear(); }} title="Clear date">✕</button>}
     </div>
   );
 };
@@ -328,19 +297,15 @@ export default function ListTasksCard({ list, onRenameList, onDeleteList, isSing
   const [drawerTask, setDrawerTask] = useState(null);
   const [aiQuota, setAiQuota] = useState(null);
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
-
-  const isTouchScreen = typeof window !== 'undefined' && (
-    "ontouchstart" in window ||
-    navigator.maxTouchPoints > 0 ||
-    window.matchMedia("(pointer: coarse)").matches
-  );
+  const { lists } = useOutletContext() || { lists: [] };
+  const [editListDropdownOpen, setEditListDropdownOpen] = useState(false);
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
-    ...(!isTouchScreen ? [useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } })] : []),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
-  
+
   const listMenuRef = useRef(null);
   const sortMenuRef = useRef(null);
   const taskMenuRef = useRef(null);
@@ -396,6 +361,59 @@ export default function ListTasksCard({ list, onRenameList, onDeleteList, isSing
   }, [incompleteCount, onCountUpdate, list?.id]);
 
   useEffect(() => { loadTasks(); }, [list?.id, isStarredMode, isTodayMode, isUpcomingMode, isOverdueMode]);
+
+  const otherLists = useMemo(() => {
+    if (!lists || !list) return [];
+    return lists.filter(l => l.id !== list.id);
+  }, [lists, list]);
+
+  useEffect(() => {
+    if (!editingTaskId) {
+      setEditListDropdownOpen(false);
+    }
+  }, [editingTaskId]);
+
+  useEffect(() => {
+    const handleMovedEvent = (e) => {
+      const { task, subtasks, sourceListId, targetListId, targetIndex } = e.detail;
+      
+      if (list?.id && (list.id === sourceListId || list.id === targetListId)) {
+        if (list.id === sourceListId) {
+          setTasks(prev => prev.filter(t => {
+            const isMainTask = String(t.id) === String(task.id);
+            const isSubtask = subtasks.some(s => String(s.id) === String(t.id));
+            return !isMainTask && !isSubtask;
+          }));
+        }
+        
+        if (list.id === targetListId) {
+          setTasks(prev => {
+            if (prev.some(t => String(t.id) === String(task.id))) return prev;
+            
+            const updatedTask = { ...task, list_id: targetListId };
+            const updatedSubtasks = subtasks.map(s => ({ ...s, list_id: targetListId }));
+            
+            const activeTasks = prev.filter(t => !t.is_completed);
+            const completedTasks = prev.filter(t => t.is_completed);
+            
+            let newActive = [...activeTasks];
+            if (targetIndex !== null && targetIndex !== undefined && targetIndex >= 0 && targetIndex <= activeTasks.length) {
+              newActive.splice(targetIndex, 0, updatedTask);
+            } else {
+              newActive.push(updatedTask);
+            }
+            
+            return [...newActive, ...updatedSubtasks, ...completedTasks];
+          });
+        }
+      }
+    };
+    
+    window.addEventListener('task-moved-between-lists', handleMovedEvent);
+    return () => {
+      window.removeEventListener('task-moved-between-lists', handleMovedEvent);
+    };
+  }, [list?.id]);
 
   useEffect(() => {
     if (editorOpen) {
@@ -563,10 +581,10 @@ export default function ListTasksCard({ list, onRenameList, onDeleteList, isSing
 
   const handleApplySubtasks = async (parentTask, subtaskTitles) => {
     if (!parentTask || !subtaskTitles || subtaskTitles.length === 0) return;
-    
+
     const parentId = parentTask.id;
     const targetListId = parentTask.list_id || list?.id || defaultListId;
-    
+
     // Create optimistic local subtasks first
     const optimisticTasks = subtaskTitles.map((stepTitle) => {
       const tempId = self.crypto.randomUUID();
@@ -579,17 +597,17 @@ export default function ListTasksCard({ list, onRenameList, onDeleteList, isSing
         list_id: targetListId
       };
     });
-    
+
     setTasks(prev => [...prev, ...optimisticTasks]);
-    
+
     try {
       // Create actual subtasks in the database in parallel
       const savedTasks = await Promise.all(
-        subtaskTitles.map(stepTitle => 
+        subtaskTitles.map(stepTitle =>
           createTask(targetListId, { title: stepTitle, parentTaskId: parentId })
         )
       );
-      
+
       // Update local subtasks with database properties
       setTasks(prev => {
         let updated = [...prev];
@@ -617,47 +635,147 @@ export default function ListTasksCard({ list, onRenameList, onDeleteList, isSing
     try { await updateTask(idToUpdate, { title: editTitle.trim(), description: editDetails.trim(), dueDate: editDueDate || null, recurrenceType: editRecurrence || 'NONE' }); } catch (err) { console.error(err); }
   }
 
+  async function handleMoveTask(taskId, targetList) {
+    if (!list || !targetList || list.id === targetList.id) return;
+    
+    const taskObj = tasks.find(t => t.id === taskId);
+    if (!taskObj) return;
+    
+    const subtasksToMove = tasks.filter(t => {
+      const pid = t.parent_task_id || t.parentTaskId;
+      return String(pid) === String(taskId);
+    });
+    
+    setOpenMenuTaskId(null);
+    const wasEditing = editingTaskId === taskId;
+    if (wasEditing) {
+      setEditingTaskId(null);
+    }
+    
+    let finalTitle = (wasEditing ? editTitle.trim() : taskObj.title) || taskObj.title;
+    let finalDetails = (wasEditing ? editDetails.trim() : taskObj.description) || taskObj.description;
+    let finalDueDate = (wasEditing ? editDueDate : taskObj.due_date) || taskObj.due_date;
+    let finalRecurrence = (wasEditing ? editRecurrence : taskObj.recurrence_type) || taskObj.recurrence_type;
+    
+    const updatedTaskObj = {
+      ...taskObj,
+      title: finalTitle,
+      description: finalDetails,
+      due_date: finalDueDate,
+      recurrence_type: finalRecurrence
+    };
+    
+    window.dispatchEvent(new CustomEvent('task-moved-between-lists', {
+      detail: {
+        task: updatedTaskObj,
+        subtasks: subtasksToMove,
+        sourceListId: list.id,
+        targetListId: targetList.id,
+        targetIndex: null
+      }
+    }));
+    
+    showUndoToast(`Task moved to "${targetList.name}"`, async () => {
+      window.dispatchEvent(new CustomEvent('task-moved-between-lists', {
+        detail: {
+          task: updatedTaskObj,
+          subtasks: subtasksToMove,
+          sourceListId: targetList.id,
+          targetListId: list.id
+        }
+      }));
+      
+      window.isDraggingOrSyncing = true;
+      try {
+        await updateTask(taskId, {
+          title: finalTitle,
+          description: finalDetails,
+          dueDate: finalDueDate || null,
+          recurrenceType: finalRecurrence || 'NONE',
+          listId: list.id,
+          category: list.category
+        });
+      } catch (err) {
+        console.error("Failed to undo task movement", err);
+      } finally {
+        window.isDraggingOrSyncing = false;
+        window.dispatchEvent(new Event('app-data-changed'));
+      }
+    });
+    
+    window.isDraggingOrSyncing = true;
+    try {
+      await updateTask(taskId, {
+        title: finalTitle,
+        description: finalDetails,
+        dueDate: finalDueDate || null,
+        recurrenceType: finalRecurrence || 'NONE',
+        listId: targetList.id,
+        category: targetList.category
+      });
+      
+      const targetListTasks = await getTasksForList(targetList.id);
+      const targetActiveTasks = targetListTasks.filter(t => !t.is_completed && t.id !== taskId);
+      const newOrderIds = [...targetActiveTasks.map(t => t.id), taskId];
+      
+      await reorderTasks(targetList.id, newOrderIds);
+    } catch (err) {
+      console.error("Failed to persist task movement", err);
+      window.dispatchEvent(new CustomEvent('task-moved-between-lists', {
+        detail: {
+          task: updatedTaskObj,
+          subtasks: subtasksToMove,
+          sourceListId: targetList.id,
+          targetListId: list.id
+        }
+      }));
+    } finally {
+      window.isDraggingOrSyncing = false;
+      window.dispatchEvent(new Event('app-data-changed'));
+    }
+  }
+
   async function handleDelete(taskId) {
-    const taskToRestore = tasks.find(t => t.id === taskId); 
-    const subtasksToRestore = tasks.filter(t => { 
-      const pid = t.parent_task_id || t.parentTaskId; 
-      return String(pid) === String(taskId); 
+    const taskToRestore = tasks.find(t => t.id === taskId);
+    const subtasksToRestore = tasks.filter(t => {
+      const pid = t.parent_task_id || t.parentTaskId;
+      return String(pid) === String(taskId);
     });
 
     // 1. Optimistically filter out of frontend state immediately
-    setTasks(p => p.filter(t => { 
-      const pid = t.parent_task_id || t.parentTaskId; 
-      return String(t.id) !== String(taskId) && String(pid) !== String(taskId); 
+    setTasks(p => p.filter(t => {
+      const pid = t.parent_task_id || t.parentTaskId;
+      return String(t.id) !== String(taskId) && String(pid) !== String(taskId);
     }));
     setOpenMenuTaskId(null);
 
     // 2. Instantly show undo toast
     showUndoToast(
-      "Task deleted", 
-      async () => { 
+      "Task deleted",
+      async () => {
         // Undo clicked: restore state locally
-        setTasks(prev => [...prev, taskToRestore, ...subtasksToRestore]); 
-        try { 
-          await restoreTask(taskId); 
-        } catch (e) { 
+        setTasks(prev => [...prev, taskToRestore, ...subtasksToRestore]);
+        try {
+          await restoreTask(taskId);
+        } catch (e) {
           // Revert if API restore fails
-          setTasks(prev => prev.filter(t => t.id !== taskId)); 
-        } 
-      }, 
-      async () => { 
+          setTasks(prev => prev.filter(t => t.id !== taskId));
+        }
+      },
+      async () => {
         // Toast expired: do permanent cleanup if needed
-        try { 
-          await permanentDeleteTask(taskId); 
-        } catch (e) { 
-          console.error("Failed to permanently delete", e); 
-        } 
+        try {
+          await permanentDeleteTask(taskId);
+        } catch (e) {
+          console.error("Failed to permanently delete", e);
+        }
       }
     );
 
     // 3. Trigger API soft delete in background
     try {
       await deleteTask(taskId);
-    } catch (e) { 
+    } catch (e) {
       console.error(e);
       // Revert if API soft-delete fails and user hasn't hit undo already
       setTasks(prev => {
@@ -778,7 +896,48 @@ export default function ListTasksCard({ list, onRenameList, onDeleteList, isSing
                 <DatePickerSelector value={editDueDate} onChange={setEditDueDate} /><RecurrenceSelector value={editRecurrence} onChange={setEditRecurrence} />
               </div>
             )}
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}><DatePill value={editDueDate} onClear={() => setEditDueDate("")} forceToday={isTodayMode} isOverdue={isOverdueCheck(editDueDate) && !task.is_completed} /><RecurrencePill value={editRecurrence} onClear={() => setEditRecurrence(null)} /></div>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <DatePill value={editDueDate} onClear={() => setEditDueDate("")} forceToday={isTodayMode} isOverdue={isOverdueCheck(editDueDate) && !task.is_completed} />
+              <RecurrencePill value={editRecurrence} onClear={() => setEditRecurrence(null)} />
+              
+              {list && otherLists.length > 0 && (
+                <div className={styles.listSelectorPillContainer}>
+                  <button 
+                    className={styles.listSelectorPill}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setEditListDropdownOpen(p => !p);
+                    }}
+                    title="Move to list"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>{list.name}</span>
+                    <span className={styles.pillArrow}>▼</span>
+                  </button>
+                  
+                  {editListDropdownOpen && (
+                    <div className={styles.listSelectorDropdown}>
+                      <div className={styles.listSelectorDropdownHeader}>Move to list</div>
+                      {otherLists.map(l => (
+                        <button 
+                          key={l.id}
+                          className={styles.listSelectorDropdownItem}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setEditListDropdownOpen(false);
+                            handleMoveTask(task.id, l);
+                          }}
+                        >
+                          {l.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
             <div className={styles.editorActionsRight}><button className={styles.cancelBtn} onClick={() => setEditingTaskId(null)}>Cancel</button><button className={styles.saveBtn} onClick={saveEditTask} disabled={!editTitle.trim()}>Save</button></div>
           </div>
         ) : (
@@ -898,13 +1057,15 @@ export default function ListTasksCard({ list, onRenameList, onDeleteList, isSing
     if (hasCompletedTasks && !isSpecialMode) {
       animationData = CompletedAnimation;
       emptyText = "All tasks completed!";
+    } else if (isStarredMode) {
+      animationData = StarAnimation;
     }
   }
 
   return (
     <>
       <section className={`${styles.card} ${tasks.length > 0 || editorOpen ? styles.cardExpanded : ""} ${isSingleView || isStarredMode || isTodayMode || isUpcomingMode || isOverdueMode ? styles.singleViewCard : ""}`}>
-        <header className={styles.header} {...dragHandleProps} style={{ cursor: dragHandleProps ? 'grab' : 'default' }}>
+        <header className={styles.header} {...dragHandleProps} style={{ cursor: dragHandleProps ? 'grab' : 'default', touchAction: dragHandleProps ? 'none' : 'auto' }}>
           <div className={styles.titleContainer}>
             <h3 className={styles.title} title={getHeaderTitle()}>{getHeaderTitle()}</h3>
             {!isTodayMode && !isUpcomingMode && !isStarredMode && !isOverdueMode && list && (
@@ -992,10 +1153,10 @@ export default function ListTasksCard({ list, onRenameList, onDeleteList, isSing
       </section>
 
       {openMenuTaskId && (
-        <div 
-          className={`${styles.dropdown} ${styles.dropdownOpen}`} 
-          style={{ position: 'fixed', top: menuPos.top, left: menuPos.left, width: '220px', transformOrigin: menuPos.origin }} 
-          ref={taskMenuRef} 
+        <div
+          className={`${styles.dropdown} ${styles.dropdownOpen}`}
+          style={{ position: 'fixed', top: menuPos.top, left: menuPos.left, width: '220px', transformOrigin: menuPos.origin }}
+          ref={taskMenuRef}
           onClick={(e) => e.stopPropagation()}
         >
           {!isStarredMode && !isMenuForSubtask && (
@@ -1003,11 +1164,11 @@ export default function ListTasksCard({ list, onRenameList, onDeleteList, isSing
               <button className={styles.menuItem} onClick={() => { setOpenMenuTaskId(null); setAddingSubtaskToId(openMenuTaskId); }}>
                 <span className={styles.menuIconWrapper}><SubtaskArrowIcon /></span> Add a subtask
               </button>
-              <button 
-                className={styles.menuItem} 
-                onClick={() => { 
-                  const task = tasks.find(t => t.id === openMenuTaskId); 
-                  setOpenMenuTaskId(null); 
+              <button
+                className={styles.menuItem}
+                onClick={() => {
+                  const task = tasks.find(t => t.id === openMenuTaskId);
+                  setOpenMenuTaskId(null);
                   startFocus(task);
                 }}
               >
@@ -1016,14 +1177,14 @@ export default function ListTasksCard({ list, onRenameList, onDeleteList, isSing
                     <circle cx="12" cy="12" r="10"></circle>
                     <polyline points="12 6 12 12 16 14"></polyline>
                   </svg>
-                </span> 
+                </span>
                 Start Focus Session
               </button>
-              <button 
-                className={styles.menuItem} 
-                onClick={() => { 
-                  const task = tasks.find(t => t.id === openMenuTaskId); 
-                  setOpenMenuTaskId(null); 
+              <button
+                className={styles.menuItem}
+                onClick={() => {
+                  const task = tasks.find(t => t.id === openMenuTaskId);
+                  setOpenMenuTaskId(null);
                   setDrawerTask(task);
                   setDrawerOpen(true);
                 }}
@@ -1031,21 +1192,43 @@ export default function ListTasksCard({ list, onRenameList, onDeleteList, isSing
                 <span style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
                   <span className={styles.menuIconWrapper}><SparklesIcon /></span>
                   <span>Smart Subtasks</span>
-                  <span style={{ 
-                    marginLeft: 'auto', 
-                    fontSize: '10px', 
-                    padding: '2px 6px', 
-                    borderRadius: '99px', 
-                    background: 'rgba(168, 85, 247, 0.15)', 
-                    color: '#c084fc', 
-                    border: '1px solid rgba(168, 85, 247, 0.3)', 
-                    fontWeight: '600', 
-                    whiteSpace: 'nowrap' 
+                  <span style={{
+                    marginLeft: 'auto',
+                    fontSize: '10px',
+                    padding: '2px 6px',
+                    borderRadius: '99px',
+                    background: 'rgba(168, 85, 247, 0.15)',
+                    color: '#c084fc',
+                    border: '1px solid rgba(168, 85, 247, 0.3)',
+                    fontWeight: '600',
+                    whiteSpace: 'nowrap'
                   }}>
                     {aiQuota ? (aiQuota.isProduction ? `${aiQuota.dailyRemaining}/${aiQuota.dailyLimit}` : "⚡ Dev Mode") : "..."}
                   </span>
                 </span>
               </button>
+              {otherLists.length > 0 && (
+                <div className={styles.menuItemWithSubmenu}>
+                  <span className={styles.menuIconWrapper}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                  </span>
+                  <span>Move to list</span>
+                  <span className={styles.submenuArrow}>▶</span>
+                  <div className={styles.subMenu}>
+                    {otherLists.map(l => (
+                      <button 
+                        key={l.id} 
+                        className={styles.subMenuItem} 
+                        onClick={() => handleMoveTask(openMenuTaskId, l)}
+                      >
+                        {l.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </>
           )}
           <div className={styles.separator} />
@@ -1055,8 +1238,8 @@ export default function ListTasksCard({ list, onRenameList, onDeleteList, isSing
         </div>
       )}
       {list && <RenameListModal isOpen={renameOpen} currentName={list.name} onCancel={() => setRenameOpen(false)} onRename={(n) => { setRenameOpen(false); onRenameList(list.id, n); }} />}
-      
-      <SmartSubtaskDrawer 
+
+      <SmartSubtaskDrawer
         isOpen={drawerOpen}
         onClose={() => { setDrawerOpen(false); setDrawerTask(null); }}
         task={drawerTask}
