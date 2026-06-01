@@ -1301,7 +1301,7 @@
 
 /* ================= MOVE TO LIST SUB-MENU ================= */
 .menuItemWithSubmenu {
-  position: relative;
+  position: relative !important;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1315,6 +1315,7 @@
   cursor: pointer;
   font-size: 14px;
   transition: background 0.1s;
+  box-sizing: border-box;
 }
 
 .menuItemWithSubmenu:hover {
@@ -1328,9 +1329,9 @@
 }
 
 .subMenu {
-  position: absolute;
-  left: -206px; /* Place to the left since main menu is right-aligned */
-  top: 0;
+  position: absolute !important;
+  left: -206px !important; /* Place to the left since main menu is right-aligned */
+  top: -6px !important; /* Align exactly with the top padding boundary of main menu */
   min-width: 200px;
   background: var(--surface-2);
   border: 1px solid var(--border);
