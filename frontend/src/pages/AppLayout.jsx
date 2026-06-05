@@ -30,8 +30,17 @@ export default function AppLayout() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isCheatSheetOpen, setIsCheatSheetOpen] = useState(false);
-  const [lists, setLists] = useState([]);
-  const [isListsLoading, setIsListsLoading] = useState(true);
+  const [lists, setLists] = useState(() => {
+    try {
+      const cached = localStorage.getItem('cached_lists');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [isListsLoading, setIsListsLoading] = useState(() => {
+    return !localStorage.getItem('cached_lists');
+  });
   
   // 🔥 NEW: Lifted state to share counts between cards and sidebar
   const [taskCounts, setTaskCounts] = useState({});
@@ -109,6 +118,7 @@ export default function AppLayout() {
       try {
         const data = await getLists();
         setLists(data);
+        localStorage.setItem('cached_lists', JSON.stringify(data));
         
         const validIds = new Set(data.map((l) => l.id));
         const savedActiveId = localStorage.getItem("activeListId");
@@ -126,8 +136,11 @@ export default function AppLayout() {
            validatedSelection.add(def.id);
         }
         setSelectedListIds(validatedSelection);
-      } catch (error) { console.error("Failed to load lists", error); }
-      finally { setIsListsLoading(false); }
+      } catch (error) { 
+        console.error("Failed to load lists", error); 
+      } finally { 
+        setIsListsLoading(false); 
+      }
     }
     init();
   }, []);
@@ -147,7 +160,7 @@ export default function AppLayout() {
 
   async function handleCreateList(name, category) {
     const tempId = self.crypto.randomUUID(); 
-    const optimisticList = { id: tempId, name, category, is_default: false };
+    const optimisticList = { id: tempId, clientKey: tempId, name, category, is_default: false, isOptimistic: true };
     setIsCreateModalOpen(false);
     setLists((prev) => [...prev, optimisticList]);
     setSelectedListIds((prev) => new Set(prev).add(tempId));
@@ -155,7 +168,7 @@ export default function AppLayout() {
 
     try {
       const createdList = await createList(name, category);
-      setLists((prev) => prev.map(list => list.id === tempId ? createdList : list));
+      setLists((prev) => prev.map(list => list.id === tempId ? { ...createdList, clientKey: tempId, isNewlyCreated: true } : list));
       setSelectedListIds((prev) => {
           const next = new Set(prev);
           next.delete(tempId);

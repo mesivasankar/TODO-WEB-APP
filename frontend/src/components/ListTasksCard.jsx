@@ -279,8 +279,37 @@ export default function ListTasksCard({ list, onRenameList, onDeleteList, isSing
   const shouldRender = list || isStarredMode || isTodayMode || isUpcomingMode || isOverdueMode;
   if (!shouldRender) return null;
 
-  const [tasks, setTasks] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const cacheKey = useMemo(() => {
+    if (isTodayMode) return 'cached_tasks_special_today';
+    if (isUpcomingMode) return 'cached_tasks_special_upcoming';
+    if (isStarredMode) return 'cached_tasks_special_starred';
+    if (isOverdueMode) return 'cached_tasks_special_overdue';
+    return list?.id ? `cached_tasks_${list.id}` : null;
+  }, [list?.id, isStarredMode, isTodayMode, isUpcomingMode, isOverdueMode]);
+
+  const [tasks, setTasks] = useState(() => {
+    if (!cacheKey) return [];
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [isLoading, setIsLoading] = useState(() => {
+    if (list?.isOptimistic || list?.isNewlyCreated) return false;
+    if (!cacheKey) return true;
+    return !localStorage.getItem(cacheKey);
+  });
+
+  // Keep cache synced whenever state updates
+  useEffect(() => {
+    if (cacheKey && tasks.length >= 0) {
+      const cleanTasks = tasks.filter(t => t.id !== 'temp-ai-loading');
+      localStorage.setItem(cacheKey, JSON.stringify(cleanTasks));
+    }
+  }, [tasks, cacheKey]);
   const [listMenuOpen, setListMenuOpen] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
   const [openMenuTaskId, setOpenMenuTaskId] = useState(null);
@@ -314,6 +343,7 @@ export default function ListTasksCard({ list, onRenameList, onDeleteList, isSing
   const editTitleRef = useRef(null);
   const editDetailsRef = useRef(null);
   const subTitleRef = useRef(null);
+  const wasOptimisticRef = useRef(false);
 
   const [editorOpen, setEditorOpen] = useState(false);
   const [title, setTitle] = useState("");
@@ -471,8 +501,22 @@ export default function ListTasksCard({ list, onRenameList, onDeleteList, isSing
   }
 
   async function loadTasks() {
+    if (list?.isOptimistic) {
+      setTasks([]);
+      setIsLoading(false);
+      wasOptimisticRef.current = true;
+      return;
+    }
+
+    if (wasOptimisticRef.current) {
+      wasOptimisticRef.current = false;
+      return;
+    }
+
     if (list?.id && !isValidUUID(list.id)) return;
-    setIsLoading(true);
+    if (cacheKey && !localStorage.getItem(cacheKey)) {
+      setIsLoading(true);
+    }
     try {
       let data;
       if (isTodayMode) {
@@ -493,6 +537,9 @@ export default function ListTasksCard({ list, onRenameList, onDeleteList, isSing
       // Initialize with stable clientKey based on task.id
       const tasksWithKeys = (data || []).map(t => ({ ...t, clientKey: t.id }));
       setTasks(tasksWithKeys);
+      if (cacheKey) {
+        localStorage.setItem(cacheKey, JSON.stringify(tasksWithKeys));
+      }
     } catch (err) { console.error(err); }
     finally { setIsLoading(false); }
   }

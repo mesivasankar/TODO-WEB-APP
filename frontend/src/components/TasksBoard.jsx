@@ -17,7 +17,7 @@ export default function TasksBoard() {
           .filter((list) => selectedListIds.has(list.id))
           .map((list) => (
             <ListTasksCard
-              key={list.id}
+              key={list.clientKey || list.id}
               list={list}
               onRenameList={onRenameList}
               onDeleteList={onDeleteList}

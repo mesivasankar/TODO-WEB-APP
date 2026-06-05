@@ -499,7 +499,7 @@ export default function AllTasksPage() {
                     items={displayedLists}
                   >
                     <ListTasksCard 
-                      key={`tasks-card-${list.id}`}
+                      key={`tasks-card-${list.clientKey || list.id}`}
                       list={list} 
                       onRenameList={onRenameList} 
                       onDeleteList={onDeleteList} 
