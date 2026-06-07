@@ -8,18 +8,19 @@ import {
 
 const AuthContext = createContext(null);
 
-// Key stored in localStorage to remember that a session exists.
-// This lets us skip the /api/auth/me call for guests (instant load)
-// and retry gracefully when the backend is waking up (Render cold start).
-const SESSION_FLAG = 'actdone_has_session';
+// Set ONLY when the user explicitly logs out so we can skip the auth
+// check on the next page load and go straight to /login instantly.
+// For all other cases (cold visit, closed tab, old sessions) we always
+// try the /api/auth/me call so returning users are restored properly.
+const LOGGED_OUT_FLAG = 'actdone_logged_out';
 
-const MAX_RETRIES = 4;          // max wake-up retries
-const RETRY_DELAY_MS = 6000;   // 6 s between retries (~24 s total)
+const MAX_RETRIES = 4;        // max cold-start retries
+const RETRY_DELAY_MS = 6000; // 6 s between retries (~24 s total)
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  // true while we are waiting for the backend to wake up
+  // true while we are waiting for the backend to wake up after a cold start
   const [serverWaking, setServerWaking] = useState(false);
 
   useEffect(() => {
@@ -27,10 +28,9 @@ export function AuthProvider({ children }) {
     let retries = 0;
 
     async function loadUser() {
-      // ── Fast-path for guests ──────────────────────────────────────────────
-      // If there is no session flag the user was never logged in (or already
-      // logged out), so skip the network call entirely.
-      if (!localStorage.getItem(SESSION_FLAG)) {
+      // ── Fast-path: user explicitly logged out last time ───────────────────
+      // Skip the network call so the login page loads instantly.
+      if (localStorage.getItem(LOGGED_OUT_FLAG)) {
         if (!cancelled) {
           setUser(null);
           setLoading(false);
@@ -38,7 +38,7 @@ export function AuthProvider({ children }) {
         return;
       }
 
-      // ── Try to restore the session ────────────────────────────────────────
+      // ── Try to restore any existing session ───────────────────────────────
       try {
         const res = await getCurrentUser();
 
@@ -50,14 +50,13 @@ export function AuthProvider({ children }) {
           setServerWaking(false);
           setLoading(false);
         } else {
-          // Definitive auth failure (401 / 403) – the session is truly gone
-          localStorage.removeItem(SESSION_FLAG);
+          // Definitive auth failure (401 / 403) – no valid session
           setUser(null);
           setServerWaking(false);
           setLoading(false);
         }
       } catch {
-        // Network error – the backend is almost certainly still waking up
+        // Network error – backend is probably still cold-starting
         if (cancelled) return;
 
         if (retries < MAX_RETRIES) {
@@ -65,8 +64,7 @@ export function AuthProvider({ children }) {
           setServerWaking(true);
           setTimeout(loadUser, RETRY_DELAY_MS);
         } else {
-          // Gave up waiting – clear session so the user can log in again
-          localStorage.removeItem(SESSION_FLAG);
+          // Gave up – let the user try logging in manually
           setUser(null);
           setServerWaking(false);
           setLoading(false);
@@ -78,6 +76,7 @@ export function AuthProvider({ children }) {
 
     return () => { cancelled = true; };
   }, []);
+
 
   async function register(data) {
     try {
@@ -95,20 +94,22 @@ export function AuthProvider({ children }) {
     }
 
     const data = await res.json();
-    // Mark that a session exists so the next page load skips the guest fast-path
-    localStorage.setItem(SESSION_FLAG, '1');
+    // Clear the logged-out flag so the next page load attempts session restore
+    localStorage.removeItem(LOGGED_OUT_FLAG);
     setUser(data.user || data);
   }
 
   async function logout() {
     await logoutApi();
-    localStorage.removeItem(SESSION_FLAG);
+    // Mark as explicitly logged out so the next visit skips the auth check
+    localStorage.setItem(LOGGED_OUT_FLAG, '1');
     setUser(null);
   }
 
-  // Called by AppLayout after a successful Google OAuth redirect
+  // Called by GoogleAuthHandler after a successful Google OAuth redirect
   function markGoogleSession() {
-    localStorage.setItem(SESSION_FLAG, '1');
+    // Clear the logged-out flag so the session is recognised
+    localStorage.removeItem(LOGGED_OUT_FLAG);
   }
 
   return (

@@ -41,7 +41,7 @@ function GoogleAuthHandler() {
 }
 
 export default function App() {
-  const { loading, serverWaking } = useAuth();
+  const { loading, serverWaking, user } = useAuth();
 
   if (loading) {
     return <Preloader message={serverWaking ? 'Server is starting up, please wait…' : undefined} />;
@@ -51,11 +51,12 @@ export default function App() {
       <>
         <GoogleAuthHandler />
         <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/login" element={user ? <Navigate to="/app/all" replace /> : <LoginPage />} />
+          <Route path="/register" element={user ? <Navigate to="/app/all" replace /> : <RegisterPage />} />
           <Route path="/verify-email/success" element={<VerifyEmailSuccessPage />} />
           <Route path="/verify-email/error" element={<VerifyEmailErrorPage />} />
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          {/* Root: send logged-in users straight to the app */}
+          <Route path="/" element={user ? <Navigate to="/app/all" replace /> : <Navigate to="/login" replace />} />
 
           <Route
             path="/app"
@@ -76,7 +77,8 @@ export default function App() {
             <Route path="analytics" element={<AnalyticsModal />} />
           </Route>
 
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          <Route path="*" element={user ? <Navigate to="/app/all" replace /> : <Navigate to="/login" replace />} />
+
         </Routes>
       </>
   );
