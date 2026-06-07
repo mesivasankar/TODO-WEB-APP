@@ -15,7 +15,7 @@ const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 const usageTracker = new Map();
 
 const RATE_LIMITS = {
-  MINUTE_LIMIT: 2,       // Max 2 requests per minute
+  MINUTE_LIMIT: 10,      // Max 10 requests per minute
   DAILY_LIMIT: 50,       // Max 50 requests per day
   MINUTE_WINDOW: 60 * 1000,        // 1 minute in ms
   DAILY_WINDOW: 24 * 60 * 60 * 1000 // 24 hours in ms
