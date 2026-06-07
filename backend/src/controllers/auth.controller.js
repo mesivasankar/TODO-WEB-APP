@@ -159,7 +159,8 @@ export async function googleAuthCallback(req, res, next) {
       maxAge: AUTH_COOKIE_MAX_AGE
     });
 
-    return res.redirect(`${env.clientUrl}/app`);
+    return res.redirect(`${env.clientUrl}/app?auth=google`);
+
   } catch (err) {
     next(err);
   }

@@ -1,5 +1,5 @@
-import React from "react";
-import { Routes, Route, Navigate, useNavigate } from "react-router-dom"; 
+import React, { useEffect } from "react";
+import { Routes, Route, Navigate, useNavigate, useSearchParams } from "react-router-dom"; 
 import useAuth from "./hooks/useAuth";
 import Preloader from "./components/Preloader";
 import AppLayout from "./pages/AppLayout";
@@ -24,15 +24,32 @@ const AnalyticsModal = () => {
   return <StatsDashboard onClose={() => navigate('/app/all')} />;
 };
 
+// Sets the localStorage session flag when Google OAuth redirects back with ?auth=google
+function GoogleAuthHandler() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { markGoogleSession } = useAuth();
+
+  useEffect(() => {
+    if (searchParams.get('auth') === 'google') {
+      markGoogleSession();
+      // Remove the query param so it doesn't persist in the URL
+      setSearchParams({}, { replace: true });
+    }
+  }, []);
+
+  return null;
+}
+
 export default function App() {
-  const { loading } = useAuth();
+  const { loading, serverWaking } = useAuth();
 
   if (loading) {
-    return <Preloader />;
+    return <Preloader message={serverWaking ? 'Server is starting up, please wait…' : undefined} />;
   }
 
   return (
       <>
+        <GoogleAuthHandler />
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
