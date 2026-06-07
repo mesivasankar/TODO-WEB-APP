@@ -8,48 +8,53 @@ import {
 
 const AuthContext = createContext(null);
 
-// Set ONLY when the user explicitly logs out so we can skip the auth
-// check on the next page load and go straight to /login instantly.
-// For all other cases (cold visit, closed tab, old sessions) we always
-// try the /api/auth/me call so returning users are restored properly.
-const LOGGED_OUT_FLAG = 'actdone_logged_out';
-
-const MAX_RETRIES = 4;        // max cold-start retries
-const RETRY_DELAY_MS = 6000; // 6 s between retries (~24 s total)
+// ─────────────────────────────────────────────────────────────────────────────
+// SESSION_FLAG strategy
+//
+//  Set  → when the user successfully logs in (email/password or Google OAuth)
+//  Clear → when the user explicitly logs out
+//
+// On every page load:
+//  • Flag absent  → skip /api/auth/me entirely, show /login instantly  ✅
+//  • Flag present → call /api/auth/me to restore the session            ✅
+//    · If Render is sleeping, retry up to MAX_RETRIES times (cold-start)
+//    · If the cookie is invalid (401), clear the flag and go to /login
+//
+// Brand-new visitors and logged-out users NEVER wake up Render,
+// so they see the login page in < 1 second.
+// ─────────────────────────────────────────────────────────────────────────────
+const SESSION_FLAG   = 'actdone_has_session';
+const MAX_RETRIES    = 4;      // retries while Render is cold-starting
+const RETRY_DELAY_MS = 6000;  // 6 s between retries (~24 s total)
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  // true while we are waiting for the backend to wake up after a cold start
+  const [user, setUser]                 = useState(null);
+  const [loading, setLoading]           = useState(true);
   const [serverWaking, setServerWaking] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    let retries = 0;
+    let retries   = 0;
 
     async function loadUser() {
-      // ── Google OAuth fast-fix ─────────────────────────────────────────────
-      // If the browser just landed here from a Google OAuth redirect
-      // (?auth=google), always clear the logged-out flag FIRST so the auth
-      // check below runs even if the user had explicitly logged out before.
+      // ── Google OAuth landing ──────────────────────────────────────────────
+      // When Google redirects back with ?auth=google the session cookie has
+      // just been set. Set the flag HERE, before the fast-path check, so the
+      // auth check always runs after a Google OAuth redirect.
       if (new URLSearchParams(window.location.search).get('auth') === 'google') {
-        localStorage.removeItem(LOGGED_OUT_FLAG);
+        localStorage.setItem(SESSION_FLAG, '1');
       }
 
-      // ── Fast-path: user explicitly logged out last time ───────────────────
-      // Skip the network call so the login page loads instantly.
-      if (localStorage.getItem(LOGGED_OUT_FLAG)) {
-        if (!cancelled) {
-          setUser(null);
-          setLoading(false);
-        }
+      // ── Fast-path: no known session ───────────────────────────────────────
+      // Skip the network call entirely → login page loads in < 1 s.
+      if (!localStorage.getItem(SESSION_FLAG)) {
+        if (!cancelled) { setUser(null); setLoading(false); }
         return;
       }
 
-      // ── Try to restore any existing session ───────────────────────────────
+      // ── Try to restore the session ────────────────────────────────────────
       try {
         const res = await getCurrentUser();
-
         if (cancelled) return;
 
         if (res.ok) {
@@ -58,13 +63,14 @@ export function AuthProvider({ children }) {
           setServerWaking(false);
           setLoading(false);
         } else {
-          // Definitive auth failure (401 / 403) – no valid session
+          // Definitive auth failure (401/403) – cookie is gone or expired
+          localStorage.removeItem(SESSION_FLAG);
           setUser(null);
           setServerWaking(false);
           setLoading(false);
         }
       } catch {
-        // Network error – backend is probably still cold-starting
+        // Network error – Render is almost certainly cold-starting
         if (cancelled) return;
 
         if (retries < MAX_RETRIES) {
@@ -72,7 +78,8 @@ export function AuthProvider({ children }) {
           setServerWaking(true);
           setTimeout(loadUser, RETRY_DELAY_MS);
         } else {
-          // Gave up – let the user try logging in manually
+          // Gave up – let the user log in again manually
+          localStorage.removeItem(SESSION_FLAG);
           setUser(null);
           setServerWaking(false);
           setLoading(false);
@@ -84,7 +91,6 @@ export function AuthProvider({ children }) {
 
     return () => { cancelled = true; };
   }, []);
-
 
   async function register(data) {
     try {
@@ -100,24 +106,20 @@ export function AuthProvider({ children }) {
       const errorData = await res.json();
       throw new Error(errorData.message || 'Login failed');
     }
-
     const data = await res.json();
-    // Clear the logged-out flag so the next page load attempts session restore
-    localStorage.removeItem(LOGGED_OUT_FLAG);
+    localStorage.setItem(SESSION_FLAG, '1'); // mark that a session exists
     setUser(data.user || data);
   }
 
   async function logout() {
     await logoutApi();
-    // Mark as explicitly logged out so the next visit skips the auth check
-    localStorage.setItem(LOGGED_OUT_FLAG, '1');
+    localStorage.removeItem(SESSION_FLAG);   // clear so next visit is instant
     setUser(null);
   }
 
-  // Called by GoogleAuthHandler after a successful Google OAuth redirect
+  // Called by GoogleAuthHandler to ensure the flag is set after OAuth redirect
   function markGoogleSession() {
-    // Clear the logged-out flag so the session is recognised
-    localStorage.removeItem(LOGGED_OUT_FLAG);
+    localStorage.setItem(SESSION_FLAG, '1');
   }
 
   return (
@@ -128,7 +130,7 @@ export function AuthProvider({ children }) {
       login,
       register,
       logout,
-      setUser, // so AppLayout can update the display name
+      setUser,
       markGoogleSession,
     }}>
       {children}
