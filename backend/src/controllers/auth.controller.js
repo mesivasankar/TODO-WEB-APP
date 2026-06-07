@@ -18,8 +18,9 @@ import {
   signAuthToken,
 } from '../services/auth.service.js';
 
-const AUTH_COOKIE_MAX_AGE = 1000 * 60 * 60 * 24 * 7; // 7 days
-const AUTH_JWT_EXPIRES_IN = '7d';
+const AUTH_COOKIE_MAX_AGE = 1000 * 60 * 60 * 24 * 30; // 30 days
+const AUTH_JWT_EXPIRES_IN = '30d';
+
 
 export async function googleAuthStart(req, res, next) {
   try {

@@ -28,6 +28,14 @@ export function AuthProvider({ children }) {
     let retries = 0;
 
     async function loadUser() {
+      // ── Google OAuth fast-fix ─────────────────────────────────────────────
+      // If the browser just landed here from a Google OAuth redirect
+      // (?auth=google), always clear the logged-out flag FIRST so the auth
+      // check below runs even if the user had explicitly logged out before.
+      if (new URLSearchParams(window.location.search).get('auth') === 'google') {
+        localStorage.removeItem(LOGGED_OUT_FLAG);
+      }
+
       // ── Fast-path: user explicitly logged out last time ───────────────────
       // Skip the network call so the login page loads instantly.
       if (localStorage.getItem(LOGGED_OUT_FLAG)) {
