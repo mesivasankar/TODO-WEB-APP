@@ -218,8 +218,14 @@ export async function register(req, res, next) {
     const verificationToken = await createEmailVerificationToken(user.id);
     console.log('Email verification token (DEV ONLY):', verificationToken.token);
 
+    // Build the server base URL: use env if it's a real domain, otherwise
+    // derive from the incoming request (works automatically on Render/any host)
+    const serverBase =
+      env.serverBaseUrl && !env.serverBaseUrl.includes('localhost')
+        ? env.serverBaseUrl
+        : `${req.protocol}://${req.get('host')}`;
     const verificationUrl =
-      `${env.serverBaseUrl}/api/auth/verify-email?token=${verificationToken.token}`;
+      `${serverBase}/api/auth/verify-email?token=${verificationToken.token}`;
 
     // Send verification email asynchronously in the background so slow SMTP connections or port blocks don't hang the registration request.
     sendVerificationEmail(user.email, verificationUrl).catch(emailError => {
@@ -275,8 +281,12 @@ export async function resendVerificationEmail(req, res, next) {
       [user_id, newToken]
     );
 
+    const serverBase =
+      env.serverBaseUrl && !env.serverBaseUrl.includes('localhost')
+        ? env.serverBaseUrl
+        : `${req.protocol}://${req.get('host')}`;
     const verificationUrl =
-      `${env.serverBaseUrl}/api/auth/verify-email?token=${newToken}`;
+      `${serverBase}/api/auth/verify-email?token=${newToken}`;
 
     // Send verification email asynchronously in the background so slow SMTP connections or port blocks don't hang the request.
     sendVerificationEmail(email, verificationUrl).catch(emailError => {

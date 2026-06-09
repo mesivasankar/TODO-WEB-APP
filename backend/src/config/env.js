@@ -49,9 +49,10 @@ export const env = {
   emailVerificationTokenHours: Number(process.env.EMAIL_VERIFICATION_TOKEN_HOURS || 24),
   mailerSendApiKey: process.env.MAILERSEND_API_KEY,
   mailerSendFromName: process.env.MAILERSEND_FROM_NAME,
-  googleClientId: process.env.GOOGLE_CLIENT_ID,
-  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  googleRedirectUri: process.env.GOOGLE_REDIRECT_URI,
+  resendApiKey: process.env.RESEND_API_KEY,
+  googleClientId: (process.env.GOOGLE_CLIENT_ID || '').trim(),
+  googleClientSecret: (process.env.GOOGLE_CLIENT_SECRET || '').trim(),
+  googleRedirectUri: (process.env.GOOGLE_REDIRECT_URI || '').trim(),
   // Mailtrap (Dev)
   mailtrapHost: process.env.MAILTRAP_HOST,
   mailtrapPort: process.env.MAILTRAP_PORT,
