@@ -99,7 +99,8 @@ export function AuthProvider({ children }) {
 
   async function register(data) {
     try {
-      await registerApi(data);
+      const res = await registerApi(data);
+      return await res.json();
     } catch (err) {
       throw err;
     }

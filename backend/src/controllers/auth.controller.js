@@ -227,21 +227,37 @@ export async function register(req, res, next) {
     const verificationUrl =
       `${serverBase}/api/auth/verify-email?token=${verificationToken.token}`;
 
-    // Send verification email asynchronously in the background so slow SMTP connections or port blocks don't hang the registration request.
-    sendVerificationEmail(user.email, verificationUrl).catch(emailError => {
-      console.error('Failed to send verification email in background:', emailError);
-    });
-
-    return res.status(201).json({
-      message:
-        'User registered successfully. Please check your email to verify your account.',
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        is_email_verified: user.is_email_verified,
-      },
-    });
+    try {
+      await sendVerificationEmail(user.email, verificationUrl);
+      return res.status(201).json({
+        message: 'User registered successfully. Please check your email to verify your account.',
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          is_email_verified: user.is_email_verified,
+        },
+      });
+    } catch (emailError) {
+      console.error('Failed to send verification email, auto-verifying user:', emailError);
+      
+      // Auto-verify user if email fails (useful for demo/free-tier limits where we can only send to the owner)
+      await pool.query(
+        `UPDATE users SET is_email_verified = TRUE WHERE id = $1`,
+        [user.id]
+      );
+      
+      return res.status(201).json({
+        message: 'Registration successful! (Auto-verified: email could not be sent due to free tier restrictions). You can log in now.',
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          is_email_verified: true,
+        },
+        autoVerified: true,
+      });
+    }
   } catch (err) {
     next(err);
   }
@@ -288,12 +304,22 @@ export async function resendVerificationEmail(req, res, next) {
     const verificationUrl =
       `${serverBase}/api/auth/verify-email?token=${newToken}`;
 
-    // Send verification email asynchronously in the background so slow SMTP connections or port blocks don't hang the request.
-    sendVerificationEmail(email, verificationUrl).catch(emailError => {
-      console.error('Failed to resend verification email in background:', emailError);
-    });
-
-    return res.json({ message: "Verification email resent" });
+    try {
+      await sendVerificationEmail(email, verificationUrl);
+      return res.json({ message: "Verification email resent" });
+    } catch (emailError) {
+      console.error('Failed to resend verification email, auto-verifying user:', emailError);
+      
+      await pool.query(
+        `UPDATE users SET is_email_verified = TRUE WHERE id = $1`,
+        [user_id]
+      );
+      
+      return res.json({
+        message: "Since the verification email could not be sent (free tier restrictions), your email has been automatically verified. You can log in now.",
+        autoVerified: true,
+      });
+    }
   } catch (err) {
     next(err);
   }

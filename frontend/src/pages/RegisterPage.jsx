@@ -67,6 +67,7 @@ export default function RegisterPage() {
     general: "",
   });
   const [success, setSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
 
 
@@ -92,7 +93,8 @@ export default function RegisterPage() {
     setErrors({ name: "", email: "", password: "", general: "" });
 
     try {
-      await register({ name, email, password });
+      const res = await register({ name, email, password });
+      setSuccessMessage(res?.message || "Verification email sent. Please check your inbox and verify your account.");
       setSuccess(true);
 
     } catch (err) {
@@ -287,7 +289,7 @@ export default function RegisterPage() {
 
           {success && (
             <div className={styles.success}>
-              Verification email sent. Please check your inbox and verify your account.
+              {successMessage}
             </div>
           )}
 

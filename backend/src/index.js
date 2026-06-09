@@ -1,3 +1,4 @@
+// Trigger nodemon restart
 import dotenv from 'dotenv';
 import { pool } from './config/db.js';
 dotenv.config();
