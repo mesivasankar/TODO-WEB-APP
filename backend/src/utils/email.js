@@ -2,10 +2,18 @@ import { Resend } from 'resend';
 import { env } from '../config/env.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Resend client (production)
-// Free tier from address: onboarding@resend.dev (works without domain setup)
-// ─────────────────────────────────────────────────────────────────────────────
-const resend = new Resend(env.resendApiKey || process.env.RESEND_API_KEY);
+let resendClient;
+
+function getResendClient() {
+  if (!resendClient) {
+    const key = env.resendApiKey || process.env.RESEND_API_KEY;
+    if (!key) {
+      throw new Error('Missing RESEND_API_KEY');
+    }
+    resendClient = new Resend(key);
+  }
+  return resendClient;
+}
 
 const FROM_ADDRESS = 'ACTDONE <onboarding@resend.dev>';
 
@@ -116,7 +124,8 @@ export async function sendVerificationEmail(toEmail, verificationUrl) {
 
   // ── Production: send via Resend REST API ─────────────────────────────────
   try {
-    const { data, error } = await resend.emails.send({
+    const client = getResendClient();
+    const { data, error } = await client.emails.send({
       from: FROM_ADDRESS,
       to: toEmail,
       subject: 'Verify your ACTDONE account',
