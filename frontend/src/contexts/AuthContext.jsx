@@ -5,6 +5,8 @@ import {
   getCurrentUser,
   logout as logoutApi,
 } from '../api/authApi';
+import env from '../config/env';
+
 
 const AuthContext = createContext(null);
 
@@ -24,8 +26,11 @@ const AuthContext = createContext(null);
 // so they see the login page in < 1 second.
 // ─────────────────────────────────────────────────────────────────────────────
 const SESSION_FLAG   = 'actdone_has_session';
-const MAX_RETRIES    = 4;      // retries while Render is cold-starting
-const RETRY_DELAY_MS = 6000;  // 6 s between retries (~24 s total)
+// In production (Render) the server sleeps → retry several times.
+// In development the local backend should respond immediately → no retries.
+const MAX_RETRIES    = env.isProduction ? 4 : 0;
+const RETRY_DELAY_MS = 6000; // 6 s between retries (production only)
+
 
 export function AuthProvider({ children }) {
   const [user, setUser]                 = useState(null);
