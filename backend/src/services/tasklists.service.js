@@ -3,17 +3,24 @@ import { pool } from '../config/db.js';
 export async function getTaskListsForUser(userId) {
   const query = `
     SELECT
-      id,
-      name,
-      sort_order,
-      is_default,
-      category,
-      task_sort_option,
-      created_at,
-      updated_at
-    FROM task_lists
-    WHERE user_id = $1 AND deleted_at IS NULL -- 🔥 HIDE DELETED LISTS
-    ORDER BY sort_order ASC, created_at ASC
+      tl.id,
+      tl.name,
+      tl.sort_order,
+      tl.is_default,
+      tl.category,
+      tl.task_sort_option,
+      tl.created_at,
+      tl.updated_at,
+      COALESCE(tc.count, 0)::INTEGER as incomplete_task_count
+    FROM task_lists tl
+    LEFT JOIN (
+      SELECT list_id, COUNT(*) as count
+      FROM tasks
+      WHERE user_id = $1 AND deleted_at IS NULL AND is_completed = false
+      GROUP BY list_id
+    ) tc ON tl.id = tc.list_id
+    WHERE tl.user_id = $1 AND tl.deleted_at IS NULL
+    ORDER BY tl.sort_order ASC, tl.created_at ASC
   `;
 
   const values = [userId];
@@ -36,7 +43,8 @@ export async function createTaskListForUser(userId, name, category = 'OTHERS') {
         category,
         task_sort_option,
         created_at,
-        updated_at
+        updated_at,
+        0::INTEGER as incomplete_task_count
     `,
     [userId, name, category]
   );
@@ -61,7 +69,8 @@ export async function renameTaskListForUser(userId, listId, newName) {
         category,
         task_sort_option,
         created_at,
-        updated_at
+        updated_at,
+        (SELECT COALESCE(COUNT(*), 0)::INTEGER FROM tasks WHERE list_id = $2 AND user_id = $3 AND deleted_at IS NULL AND is_completed = false) as incomplete_task_count
     `,
     [newName, listId, userId]
   );
@@ -141,7 +150,8 @@ export async function updateTaskListSortOption(userId, listId, sortOption) {
       RETURNING
         id,
         task_sort_option,
-        updated_at
+        updated_at,
+        (SELECT COALESCE(COUNT(*), 0)::INTEGER FROM tasks WHERE list_id = $2 AND user_id = $3 AND deleted_at IS NULL AND is_completed = false) as incomplete_task_count
     `,
     [sortOption, listId, userId]
   );

@@ -43,7 +43,24 @@ export default function AppLayout() {
   });
   
   // 🔥 NEW: Lifted state to share counts between cards and sidebar
-  const [taskCounts, setTaskCounts] = useState({});
+  const [taskCounts, setTaskCounts] = useState(() => {
+    try {
+      const cached = localStorage.getItem('cached_lists');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        const counts = {};
+        parsed.forEach(l => {
+          if (l.id && l.incomplete_task_count !== undefined) {
+            counts[l.id] = parseInt(l.incomplete_task_count, 10) || 0;
+          }
+        });
+        return counts;
+      }
+    } catch {
+      // ignore
+    }
+    return {};
+  });
 
   const { user, logout } = useAuth(); 
   const { theme, toggleTheme } = useTheme(); 
@@ -120,6 +137,15 @@ export default function AppLayout() {
         setLists(data);
         localStorage.setItem('cached_lists', JSON.stringify(data));
         
+        // Initialize task counts from fetched lists
+        const initialCounts = {};
+        data.forEach(l => {
+          if (l.id && l.incomplete_task_count !== undefined) {
+            initialCounts[l.id] = parseInt(l.incomplete_task_count, 10) || 0;
+          }
+        });
+        setTaskCounts(initialCounts);
+        
         const validIds = new Set(data.map((l) => l.id));
         const savedActiveId = localStorage.getItem("activeListId");
         
@@ -157,6 +183,28 @@ export default function AppLayout() {
       return { ...prev, [listId]: count };
     });
   }, []);
+
+  const refreshTaskCounts = useCallback(async () => {
+    try {
+      const data = await getLists();
+      const counts = {};
+      data.forEach(l => {
+        if (l.id && l.incomplete_task_count !== undefined) {
+          counts[l.id] = parseInt(l.incomplete_task_count, 10) || 0;
+        }
+      });
+      setTaskCounts(counts);
+    } catch (error) {
+      console.error("Failed to refresh task counts", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener("app-data-changed", refreshTaskCounts);
+    return () => {
+      window.removeEventListener("app-data-changed", refreshTaskCounts);
+    };
+  }, [refreshTaskCounts]);
 
   async function handleCreateList(name, category) {
     const tempId = self.crypto.randomUUID(); 

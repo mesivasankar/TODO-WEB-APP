@@ -400,6 +400,19 @@ export default function ListTasksCard({ list, onRenameList, onDeleteList, isSing
   useEffect(() => {
     if (!editingTaskId) {
       setEditListDropdownOpen(false);
+    } else {
+      const timer = setTimeout(() => {
+        if (editTitleRef.current) {
+          editTitleRef.current.focus();
+          const length = editTitleRef.current.value.length;
+          editTitleRef.current.setSelectionRange(length, length);
+          resize(editTitleRef, 96);
+        }
+        if (editDetailsRef.current) {
+          resize(editDetailsRef, 160);
+        }
+      }, 50);
+      return () => clearTimeout(timer);
     }
   }, [editingTaskId]);
 
@@ -935,7 +948,7 @@ export default function ListTasksCard({ list, onRenameList, onDeleteList, isSing
         {isEditing ? (
           <div className={`${styles.taskEditor} ${styles.editorAnimate}`}>
             <textarea ref={editTitleRef} rows={1} maxLength={TITLE_LIMIT} className={styles.editorTitle} value={editTitle} onKeyDown={(e) => e.stopPropagation()} onChange={(e) => { setEditTitle(e.target.value); resize(editTitleRef, 96); }} />
-            <textarea ref={editDetailsRef} maxLength={DETAILS_LIMIT} className={styles.editorDetails} placeholder="Details" onKeyDown={(e) => e.stopPropagation()} onChange={(e) => { setEditDetails(e.target.value); resize(editDetailsRef, 160); }} />
+            <textarea ref={editDetailsRef} maxLength={DETAILS_LIMIT} className={styles.editorDetails} placeholder="Details" value={editDetails} onKeyDown={(e) => e.stopPropagation()} onChange={(e) => { setEditDetails(e.target.value); resize(editDetailsRef, 160); }} />
             {!isDateLocked && (
               <div className={styles.deadlineRow}>
                 <button className={styles.deadlineBtn} onClick={() => setEditDueDate(getLocalISODate(new Date()))}>Today</button>
