@@ -15,7 +15,7 @@ const PauseIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
 );
 const ResetIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" /></svg>
 );
 const CloseIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -27,7 +27,7 @@ const SoundOffIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
 );
 const SparklesIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" /></svg>
 );
 
 export default function FocusModeOverlay({ task, onClose }) {
@@ -36,7 +36,7 @@ export default function FocusModeOverlay({ task, onClose }) {
   const [isRunning, setIsRunning] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
-  
+
   // Audio volumes (0-100 scales)
   const [bVolume, setBVolume] = useState(15); // Focus Waves (Alpha)
   const [nVolume, setNVolume] = useState(30); // Cozy Rain (Brown)
@@ -178,7 +178,7 @@ export default function FocusModeOverlay({ task, onClose }) {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
       const now = ctx.currentTime;
       const freqs = [261.63, 329.63, 392.00, 493.88, 523.25]; // C4, E4, G4, B4, C5
-      
+
       freqs.forEach((freq, idx) => {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
@@ -196,12 +196,12 @@ export default function FocusModeOverlay({ task, onClose }) {
         osc.start(now + delay);
         osc.stop(now + delay + 1.3);
       });
-    } catch (e) {}
+    } catch (e) { }
   };
 
   const handleSubtaskToggle = async (sub) => {
     const updatedStatus = !sub.is_completed;
-    
+
     setSubtasks(prev => prev.map(t => t.id === sub.id ? { ...t, is_completed: updatedStatus } : t));
 
     try {
@@ -238,7 +238,7 @@ export default function FocusModeOverlay({ task, onClose }) {
     const ctx = canvas.getContext("2d");
     let animId;
     let particles = [];
-    
+
     // Aesthetic B&W monochrome confetti
     const colors = theme === "light"
       ? ["#000000", "#1f2937", "#4b5563", "#9ca3af", "#d1d5db", "#f3f4f6"]
@@ -457,7 +457,7 @@ export default function FocusModeOverlay({ task, onClose }) {
 
   return (
     <div className={`${styles.overlayContainer} ${theme === "light" ? styles.lightTheme : styles.darkTheme}`}>
-      <motion.div 
+      <motion.div
         className={styles.backdropBlur}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -480,17 +480,17 @@ export default function FocusModeOverlay({ task, onClose }) {
 
         {/* WORKSPACE AREA */}
         <div className={styles.workspaceBody}>
-          
+
           {/* TIMER COMPONENT */}
           <div className={styles.timerColumn}>
             <div className={styles.timerRingWrapper}>
               <svg className={styles.svgRing} viewBox="0 0 280 280" width="100%" height="100%">
                 <circle className={styles.ringTrack} cx="140" cy="140" r={radius} stroke={ringTrackColor} strokeWidth={strokeWidth} fill="none" />
-                <motion.circle 
-                  className={styles.ringProgress} 
-                  cx="140" 
-                  cy="140" 
-                  r={radius} 
+                <motion.circle
+                  className={styles.ringProgress}
+                  cx="140"
+                  cy="140"
+                  r={radius}
                   stroke={ringProgressColor}
                   strokeWidth={strokeWidth}
                   strokeDasharray={circumference}
@@ -508,22 +508,22 @@ export default function FocusModeOverlay({ task, onClose }) {
 
             {/* PRESETS */}
             <div className={styles.presetGroup}>
-              <button 
-                onClick={() => setTimeDuration(15)} 
+              <button
+                onClick={() => setTimeDuration(15)}
                 className={duration === 900 ? styles.presetBtnActive : styles.presetBtn}
                 disabled={timeLeft !== duration || isRunning}
               >
                 15m
               </button>
-              <button 
-                onClick={() => setTimeDuration(25)} 
+              <button
+                onClick={() => setTimeDuration(25)}
                 className={duration === 1500 ? styles.presetBtnActive : styles.presetBtn}
                 disabled={timeLeft !== duration || isRunning}
               >
                 25m
               </button>
-              <button 
-                onClick={() => setTimeDuration(45)} 
+              <button
+                onClick={() => setTimeDuration(45)}
                 className={duration === 2700 ? styles.presetBtnActive : styles.presetBtn}
                 disabled={timeLeft !== duration || isRunning}
               >
@@ -533,22 +533,22 @@ export default function FocusModeOverlay({ task, onClose }) {
 
             {/* CONTROLS */}
             <div className={styles.controlRow}>
-              <button 
+              <button
                 onClick={() => {
                   setTimeLeft(duration);
                   setIsRunning(false);
                   sessionIdRef.current = null;
                   setSessionId(null);
-                }} 
-                className={styles.iconCtrlBtn} 
+                }}
+                className={styles.iconCtrlBtn}
                 title="Reset session"
               >
                 <ResetIcon />
               </button>
-              
-              <button 
-                onClick={() => setIsRunning(p => !p)} 
-                className={styles.playPauseBtn} 
+
+              <button
+                onClick={() => setIsRunning(p => !p)}
+                className={styles.playPauseBtn}
                 title={isRunning ? "Pause Session (Space)" : "Start Session (Space)"}
               >
                 {isRunning ? <PauseIcon /> : <PlayIcon />}
@@ -563,7 +563,7 @@ export default function FocusModeOverlay({ task, onClose }) {
                 <SparklesIcon /> Nested Objectives
               </h4>
               <p className={styles.checklistSubtitle}>Check off sub-goals directly in Focus Mode.</p>
-              
+
               <div className={styles.scroller}>
                 {subtasks.length === 0 ? (
                   <div className={styles.emptyObjectives}>
@@ -572,8 +572,8 @@ export default function FocusModeOverlay({ task, onClose }) {
                 ) : (
                   <ul className={styles.subtaskUl}>
                     {subtasks.map((sub) => (
-                      <li 
-                        key={sub.id} 
+                      <li
+                        key={sub.id}
                         className={`${styles.subtaskLi} ${sub.is_completed ? styles.completedLi : ""}`}
                         onClick={() => handleSubtaskToggle(sub)}
                       >
@@ -601,12 +601,12 @@ export default function FocusModeOverlay({ task, onClose }) {
               <h5 className={styles.audioTitle}>Ambient Sound Space</h5>
               <span className={styles.sessionBadge}>{completedSessions} Completed Sessions</span>
             </div>
-            
+
             <div className={styles.mixerRow}>
               {tracks.map((track) => (
                 <div key={track.id} className={styles.audioChannel}>
                   <div className={styles.channelHeader}>
-                    <button 
+                    <button
                       onClick={() => {
                         if (track.isPlaying) {
                           track.stop();
@@ -619,7 +619,7 @@ export default function FocusModeOverlay({ task, onClose }) {
                           });
                           track.play();
                         }
-                      }} 
+                      }}
                       className={`${styles.soundBtn} ${track.isPlaying ? styles.soundActive : ""}`}
                       title={`Toggle ${track.name}`}
                     >
@@ -629,11 +629,11 @@ export default function FocusModeOverlay({ task, onClose }) {
                       <span className={styles.channelName}>{track.name}</span>
                     </div>
                   </div>
-                  <input 
-                    type="range" 
-                    min="0" 
-                    max="100" 
-                    value={track.volume} 
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={track.volume}
                     onChange={(e) => track.setVolume(Number(e.target.value))}
                     className={styles.volumeSlider}
                     disabled={!track.isPlaying}
@@ -649,7 +649,7 @@ export default function FocusModeOverlay({ task, onClose }) {
       <AnimatePresence>
         {showExitConfirm && (
           <div className={styles.dialogBackdrop}>
-            <motion.div 
+            <motion.div
               className={styles.dialogCard}
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -657,7 +657,7 @@ export default function FocusModeOverlay({ task, onClose }) {
             >
               <h3>Abandon Focus?</h3>
               <p>Your active Pomodoro timer is currently counting down. Exiting now will stop the ambient synthesizer and discard this session.</p>
-              
+
               <div className={styles.dialogActions}>
                 <button className={styles.dialogCancel} onClick={() => setShowExitConfirm(false)}>Keep Focusing</button>
                 <button className={styles.dialogConfirm} onClick={handleForceClose}>Exit Session</button>
@@ -671,7 +671,7 @@ export default function FocusModeOverlay({ task, onClose }) {
       <AnimatePresence>
         {isCompleted && (
           <div className={styles.dialogBackdrop}>
-            <motion.div 
+            <motion.div
               className={styles.dialogCard}
               style={{ textAlign: 'center', maxWidth: '360px' }}
               initial={{ scale: 0.9, opacity: 0 }}

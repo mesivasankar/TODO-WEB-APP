@@ -18,15 +18,17 @@ import {
   getAnalytics,
   clearCompletedTasks,
   bulkRestoreTasks,
-  bulkPermanentDeleteTasks
+  bulkPermanentDeleteTasks,
+  getHistoryTasks
 } from '../controllers/tasks.controller.js';
 import { requireAuth } from '../middleware/auth.middleware.js';
 
 const router = express.Router({ mergeParams: true });
 
-// 1. Starred & Search
+// 1. Starred & Search & History
 router.get('/starred', requireAuth, getAllStarredTasks);
 router.get('/search', requireAuth, searchTasks);
+router.get('/history', requireAuth, getHistoryTasks);
 
 // 2. 🔥 Smart Views & Analytics (MUST come before /:taskId)
 router.get('/special-counts', requireAuth, getSpecialTaskCounts);

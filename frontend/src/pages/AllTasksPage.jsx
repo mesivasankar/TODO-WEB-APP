@@ -18,8 +18,8 @@ import {
   TouchSensor,
   useSensor,
   useSensors,
-  DragOverlay, 
-  useDndContext, 
+  DragOverlay,
+  useDndContext,
 } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -41,23 +41,23 @@ function SortableCard({ list, items, children }) {
   const { active, over } = useDndContext();
   const isOver = over?.id === list.id;
   const isActiveList = active?.data.current?.type === 'list' || !active?.data.current?.type;
-  
+
   let linePosition = '';
   if (isOver && active && isActiveList && items) {
-      const activeIndex = items.findIndex(i => i.id === active.id);
-      const overIndex = items.findIndex(i => i.id === list.id);
-      linePosition = activeIndex < overIndex ? 'right' : 'left';
+    const activeIndex = items.findIndex(i => i.id === active.id);
+    const overIndex = items.findIndex(i => i.id === list.id);
+    linePosition = activeIndex < overIndex ? 'right' : 'left';
   }
 
   return (
     <div ref={setNodeRef} className={styles.cardContainer} style={{ opacity: isDragging ? 0.25 : 1 }}>
       {isOver && !isDragging && isActiveList && (
-          <div className={`${styles.insertionLine} ${linePosition === 'right' ? styles.lineRight : styles.lineLeft}`} />
+        <div className={`${styles.insertionLine} ${linePosition === 'right' ? styles.lineRight : styles.lineLeft}`} />
       )}
       <motion.div
         layout initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
-        style={{ height: '100%', display: 'flex', flexDirection: 'column' }} 
+        style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
       >
         {React.cloneElement(children, { dragHandleProps: { ...attributes, ...listeners } })}
       </motion.div>
@@ -67,7 +67,7 @@ function SortableCard({ list, items, children }) {
 
 function SortablePill({ list, activeListId, taskCounts, scrollToCard }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: list.id });
-  
+
   const style = {
     transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
     transition,
@@ -76,7 +76,7 @@ function SortablePill({ list, activeListId, taskCounts, scrollToCard }) {
   };
 
   return (
-    <button 
+    <button
       ref={setNodeRef}
       style={style}
       {...attributes}
@@ -95,18 +95,18 @@ function SortablePill({ list, activeListId, taskCounts, scrollToCard }) {
 }
 
 export default function AllTasksPage() {
-  const { 
-    lists, 
-    selectedListIds, 
-    activeListId, 
-    setActiveListId, 
-    taskCounts, 
-    onCountUpdate, 
-    onRenameList, 
-    onDeleteList, 
-    onReorderLists, 
+  const {
+    lists,
+    selectedListIds,
+    activeListId,
+    setActiveListId,
+    taskCounts,
+    onCountUpdate,
+    onRenameList,
+    onDeleteList,
+    onReorderLists,
     onSortList,
-    openCreateModal 
+    openCreateModal
   } = useOutletContext();
 
   const { showUndoToast } = useToast();
@@ -146,7 +146,7 @@ export default function AllTasksPage() {
         isInternalActiveIdChange.current = false;
         return;
       }
-      
+
       const attemptScroll = () => {
         const cardElement = scrollContainerRef.current?.querySelector(`[data-list-id="${activeListId}"]`);
         if (cardElement) {
@@ -162,15 +162,15 @@ export default function AllTasksPage() {
   // Sync Pills position when activeListId changes
   useEffect(() => {
     if (!isMobile || !activeListId || !chipNavRef.current) return;
-    
+
     const index = displayedLists.findIndex(l => l.id === activeListId);
     const chipElement = chipNavRef.current.children[index];
-    
+
     if (chipElement) {
       chipElement.scrollIntoView({
         behavior: 'smooth',
         block: 'nearest',
-        inline: 'center' 
+        inline: 'center'
       });
     }
   }, [activeListId, isMobile, displayedLists.length]);
@@ -192,7 +192,7 @@ export default function AllTasksPage() {
       // Calculate index based on scroll center
       const index = Math.round(scrollLeft / cardWidth);
       const currentList = displayedLists[index];
-      
+
       if (currentList && activeListId !== currentList.id) {
         // Sync state to trigger pill highlight immediately during scroll snap
         isInternalActiveIdChange.current = true;
@@ -211,7 +211,7 @@ export default function AllTasksPage() {
     const cardElement = scrollContainerRef.current?.querySelector(`[data-list-id="${listId}"]`);
     if (cardElement && scrollContainerRef.current) {
       isManualScrolling.current = true;
-      
+
       if (activeListId !== listId) {
         isInternalActiveIdChange.current = true;
         setActiveListId(listId);
@@ -220,7 +220,7 @@ export default function AllTasksPage() {
       cardElement.scrollIntoView({
         behavior: 'smooth',
         block: 'nearest',
-        inline: 'center' 
+        inline: 'center'
       });
 
       // Release lock after animation finishes
@@ -249,20 +249,20 @@ export default function AllTasksPage() {
   async function handleDragEnd(event) {
     const { active, over } = event;
     if (!over) {
-      setActiveList(null); 
+      setActiveList(null);
       setActiveDragTask(null);
       return;
     }
 
     const activeType = active.data.current?.type || 'list';
-    
+
     if (activeType === 'list') {
       if (active.id !== over.id) {
         const oldIndex = displayedLists.findIndex((l) => l.id === active.id);
         const newIndex = displayedLists.findIndex((l) => l.id === over.id);
         if (oldIndex !== -1 && newIndex !== -1) {
           const newOrder = arrayMove(displayedLists, oldIndex, newIndex);
-          
+
           if (isMobile) {
             onReorderLists(newOrder);
           } else {
@@ -284,14 +284,14 @@ export default function AllTasksPage() {
       if (draggedTask) {
         const sourceListId = active.data.current?.listId;
         const overType = over.data.current?.type;
-        
+
         let targetListId = null;
         if (overType === 'list') {
           targetListId = over.data.current?.listId;
         } else if (overType === 'task') {
           targetListId = over.data.current?.listId;
         }
-        
+
         if (targetListId) {
           // 1. RESTRICTION: Subtask should not be movable between lists!
           const isSubtask = draggedTask.parent_task_id || draggedTask.parentTaskId;
@@ -301,10 +301,10 @@ export default function AllTasksPage() {
                 const siblingItems = active.data.current?.items || [];
                 const oldIndex = siblingItems.findIndex(t => t.id === active.id);
                 const newIndex = siblingItems.findIndex(t => t.id === over.id);
-                
+
                 if (oldIndex !== -1 && newIndex !== -1) {
                   const reorderedTasks = arrayMove(siblingItems, oldIndex, newIndex);
-                  
+
                   window.dispatchEvent(new CustomEvent('tasks-reordered', {
                     detail: { listId: sourceListId, reorderedTasks }
                   }));
@@ -314,13 +314,13 @@ export default function AllTasksPage() {
 
                   // Perform database persistent update in the background
                   reorderTasks(sourceListId, reorderedTasks.map(t => t.id))
-                  .catch(err => {
-                    console.error("Failed to persist task order in same list", err);
-                  })
-                  .finally(() => {
-                    window.isDraggingOrSyncing = false;
-                    window.dispatchEvent(new Event('app-data-changed'));
-                  });
+                    .catch(err => {
+                      console.error("Failed to persist task order in same list", err);
+                    })
+                    .finally(() => {
+                      window.isDraggingOrSyncing = false;
+                      window.dispatchEvent(new Event('app-data-changed'));
+                    });
                 }
               }
             } else {
@@ -338,7 +338,7 @@ export default function AllTasksPage() {
                 // Compute target index and complete target sort-order array
                 const targetItems = over.data.current?.items || [];
                 const targetTaskIds = targetItems.map(t => t.id).filter(id => id !== draggedTask.id);
-                
+
                 let targetIndex = null;
                 if (overType === 'task') {
                   const idx = targetItems.findIndex(t => t.id === over.id || t.clientKey === over.id);
@@ -394,28 +394,28 @@ export default function AllTasksPage() {
                   listId: targetList.id,
                   category: targetList.category
                 })
-                .then(async () => {
-                  // Always chain reorder tasks inside the target list to persist exact drop position
-                  const finalTargetIdx = (targetIndex !== null && targetIndex !== undefined) ? targetIndex : targetTaskIds.length;
-                  targetTaskIds.splice(finalTargetIdx, 0, draggedTask.id);
-                  await reorderTasks(targetList.id, targetTaskIds);
-                })
-                .catch(err => {
-                  console.error("Failed to move task between lists", err);
-                  // Rollback local state optimistically if backend request failed
-                  window.dispatchEvent(new CustomEvent('task-moved-between-lists', {
-                    detail: {
-                      task: draggedTaskObj,
-                      subtasks: draggedSubtasks,
-                      sourceListId: targetListId,
-                      targetListId: sourceListId
-                    }
-                  }));
-                })
-                .finally(() => {
-                  window.isDraggingOrSyncing = false;
-                  window.dispatchEvent(new Event('app-data-changed'));
-                });
+                  .then(async () => {
+                    // Always chain reorder tasks inside the target list to persist exact drop position
+                    const finalTargetIdx = (targetIndex !== null && targetIndex !== undefined) ? targetIndex : targetTaskIds.length;
+                    targetTaskIds.splice(finalTargetIdx, 0, draggedTask.id);
+                    await reorderTasks(targetList.id, targetTaskIds);
+                  })
+                  .catch(err => {
+                    console.error("Failed to move task between lists", err);
+                    // Rollback local state optimistically if backend request failed
+                    window.dispatchEvent(new CustomEvent('task-moved-between-lists', {
+                      detail: {
+                        task: draggedTaskObj,
+                        subtasks: draggedSubtasks,
+                        sourceListId: targetListId,
+                        targetListId: sourceListId
+                      }
+                    }));
+                  })
+                  .finally(() => {
+                    window.isDraggingOrSyncing = false;
+                    window.dispatchEvent(new Event('app-data-changed'));
+                  });
               }
             }
           }
@@ -424,7 +424,7 @@ export default function AllTasksPage() {
     }
 
     // Synced at the very end of the drop call, batched together for instantaneous display!
-    setActiveList(null); 
+    setActiveList(null);
     setActiveDragTask(null);
   }
 
@@ -464,15 +464,15 @@ export default function AllTasksPage() {
             <SortableContext items={displayedLists.map(l => l.id)} strategy={horizontalListSortingStrategy}>
               <div className={styles.chipNav} ref={chipNavRef}>
                 {displayedLists.map((list) => (
-                  <SortablePill 
-                    key={list.id} 
-                    list={list} 
+                  <SortablePill
+                    key={list.id}
+                    list={list}
                     activeListId={activeListId}
                     taskCounts={taskCounts}
                     scrollToCard={scrollToCard}
                   />
                 ))}
-                <button 
+                <button
                   className={`${styles.chip} ${styles.createListPill}`}
                   onClick={openCreateModal}
                 >
@@ -485,7 +485,7 @@ export default function AllTasksPage() {
         </div>
       )}
 
-      <div 
+      <div
         ref={scrollContainerRef}
         className={`${styles.cardsWrapper} ${getLayoutClass()}`}
       >
@@ -494,15 +494,15 @@ export default function AllTasksPage() {
             <AnimatePresence mode="popLayout">
               {displayedLists.map((list) => (
                 <div key={list.id} data-list-id={list.id} className={styles.anchorWrapper}>
-                  <SortableCard 
-                    list={list} 
+                  <SortableCard
+                    list={list}
                     items={displayedLists}
                   >
-                    <ListTasksCard 
+                    <ListTasksCard
                       key={`tasks-card-${list.clientKey || list.id}`}
-                      list={list} 
-                      onRenameList={onRenameList} 
-                      onDeleteList={onDeleteList} 
+                      list={list}
+                      onRenameList={onRenameList}
+                      onDeleteList={onDeleteList}
                       isSingleView={count === 1 && !isMobile}
                       onCountUpdate={onCountUpdate}
                       onSortList={onSortList}
@@ -514,16 +514,16 @@ export default function AllTasksPage() {
             </AnimatePresence>
           </SortableContext>
           <DragOverlay dropAnimation={null}>
-             {activeList ? (
-               <div className={styles.dragOverlayCard}>
-                 <span className={styles.overlayTitle}>{activeList.name}</span>
-               </div>
-             ) : activeDragTask ? (
-               <div className={styles.dragOverlayTask}>
-                 <div className={styles.checkbox} />
-                 <span className={styles.taskTitle}>{activeDragTask.title}</span>
-               </div>
-             ) : null}
+            {activeList ? (
+              <div className={styles.dragOverlayCard}>
+                <span className={styles.overlayTitle}>{activeList.name}</span>
+              </div>
+            ) : activeDragTask ? (
+              <div className={styles.dragOverlayTask}>
+                <div className={styles.checkbox} />
+                <span className={styles.taskTitle}>{activeDragTask.title}</span>
+              </div>
+            ) : null}
           </DragOverlay>
         </DndContext>
       </div>

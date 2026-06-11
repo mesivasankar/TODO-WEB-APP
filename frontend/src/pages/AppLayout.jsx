@@ -1,22 +1,23 @@
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState, useCallback } from "react";
 import Sidebar from "../components/SideBar";
-import ProfileMenu from "../components/ProfileMenu"; 
-import CreateListModal from "../components/CreateListModal"; 
+import ProfileMenu from "../components/ProfileMenu";
+import CreateListModal from "../components/CreateListModal";
 import SearchSpotlight from "../components/SearchSpotlight";
 import ShortcutCheatSheet from "../components/ShortcutCheatSheet";
 import styles from "./AppLayout.module.css";
 import useKeyboardShortcuts from "../hooks/useKeyboardShortcuts";
 
-import LogoLight from "../assets/Logo-light.png"; 
-import LogoDark from "../assets/Logo-dark.png";   
+import LogoLight from "../assets/Logo-light.png";
+import LogoDark from "../assets/Logo-dark.png";
 
 import useAuth from "../hooks/useAuth";
-import { useTheme } from "../contexts/ThemeContext"; 
+import { useTheme } from "../contexts/ThemeContext";
 import { useToast } from "../contexts/ToastContext";
+import { updateProfile } from "../api/authApi";
 import {
   getLists,
-  createList, 
+  createList,
   renameListApi,
   deleteListApi,
   reorderLists,
@@ -27,7 +28,7 @@ import {
 export default function AppLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 1024);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); 
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isCheatSheetOpen, setIsCheatSheetOpen] = useState(false);
   const [lists, setLists] = useState(() => {
@@ -41,7 +42,7 @@ export default function AppLayout() {
   const [isListsLoading, setIsListsLoading] = useState(() => {
     return !localStorage.getItem('cached_lists');
   });
-  
+
   // 🔥 NEW: Lifted state to share counts between cards and sidebar
   const [taskCounts, setTaskCounts] = useState(() => {
     try {
@@ -62,8 +63,8 @@ export default function AppLayout() {
     return {};
   });
 
-  const { user, logout } = useAuth(); 
-  const { theme, toggleTheme } = useTheme(); 
+  const { user, logout, setUser } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const { showUndoToast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -86,7 +87,7 @@ export default function AppLayout() {
   // 🔥 NEW: Dynamic Favicon Switcher (Strictly Browser/System Based)
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    
+
     const updateFavicon = () => {
       const isBrowserDark = mediaQuery.matches;
       const favicon = document.getElementById("favicon");
@@ -103,7 +104,7 @@ export default function AppLayout() {
     } else {
       mediaQuery.addListener(updateFavicon);
     }
-    
+
     return () => {
       if (mediaQuery.removeEventListener) {
         mediaQuery.removeEventListener('change', updateFavicon);
@@ -118,11 +119,12 @@ export default function AppLayout() {
     { key: "k", ctrlCmd: true, action: () => setIsSearchOpen(true) },
     { key: "d", ctrlCmd: true, action: () => toggleTheme(theme === 'dark' ? 'light' : 'dark') },
     { key: "?", shift: true, action: () => setIsCheatSheetOpen(true), allowInInput: false },
-    { key: "Escape", action: () => {
+    {
+      key: "Escape", action: () => {
         setIsSearchOpen(false);
         setIsCreateModalOpen(false);
         setIsCheatSheetOpen(false);
-      }, allowInInput: true 
+      }, allowInInput: true
     }
   ]);
 
@@ -136,7 +138,7 @@ export default function AppLayout() {
         const data = await getLists();
         setLists(data);
         localStorage.setItem('cached_lists', JSON.stringify(data));
-        
+
         // Initialize task counts from fetched lists
         const initialCounts = {};
         data.forEach(l => {
@@ -145,10 +147,10 @@ export default function AppLayout() {
           }
         });
         setTaskCounts(initialCounts);
-        
+
         const validIds = new Set(data.map((l) => l.id));
         const savedActiveId = localStorage.getItem("activeListId");
-        
+
         if (savedActiveId && validIds.has(savedActiveId)) {
           setActiveListId(savedActiveId);
         } else if (data.length > 0) {
@@ -158,14 +160,14 @@ export default function AppLayout() {
 
         const validatedSelection = new Set([...selectedListIds].filter((id) => validIds.has(id)));
         if (validatedSelection.size === 0 && data.length > 0) {
-           const def = data.find(l => l.is_default) || data[0];
-           validatedSelection.add(def.id);
+          const def = data.find(l => l.is_default) || data[0];
+          validatedSelection.add(def.id);
         }
         setSelectedListIds(validatedSelection);
-      } catch (error) { 
-        console.error("Failed to load lists", error); 
-      } finally { 
-        setIsListsLoading(false); 
+      } catch (error) {
+        console.error("Failed to load lists", error);
+      } finally {
+        setIsListsLoading(false);
       }
     }
     init();
@@ -207,7 +209,7 @@ export default function AppLayout() {
   }, [refreshTaskCounts]);
 
   async function handleCreateList(name, category) {
-    const tempId = self.crypto.randomUUID(); 
+    const tempId = self.crypto.randomUUID();
     const optimisticList = { id: tempId, clientKey: tempId, name, category, is_default: false, isOptimistic: true };
     setIsCreateModalOpen(false);
     setLists((prev) => [...prev, optimisticList]);
@@ -218,18 +220,18 @@ export default function AppLayout() {
       const createdList = await createList(name, category);
       setLists((prev) => prev.map(list => list.id === tempId ? { ...createdList, clientKey: tempId, isNewlyCreated: true } : list));
       setSelectedListIds((prev) => {
-          const next = new Set(prev);
-          next.delete(tempId);
-          next.add(createdList.id);
-          return next;
+        const next = new Set(prev);
+        next.delete(tempId);
+        next.add(createdList.id);
+        return next;
       });
       setActiveListId(createdList.id);
     } catch (error) {
       setLists((prev) => prev.filter(list => list.id !== tempId));
       setSelectedListIds((prev) => {
-          const next = new Set(prev);
-          next.delete(tempId);
-          return next;
+        const next = new Set(prev);
+        next.delete(tempId);
+        return next;
       });
     }
   }
@@ -278,7 +280,7 @@ export default function AppLayout() {
 
     try {
       await deleteListApi(listId);
-      
+
       showUndoToast(`List "${listToDelete.name}" deleted`, async () => {
         // Undo Callback: Restore locally
         setLists((prev) => {
@@ -337,7 +339,7 @@ export default function AppLayout() {
 
   async function handleReorderLists(newLists) {
     setLists(newLists);
-    try { await reorderLists(newLists.map(l => l.id)); } catch(err) { console.error(err); }
+    try { await reorderLists(newLists.map(l => l.id)); } catch (err) { console.error(err); }
   }
 
   async function handleSortList(listId, sortOption) {
@@ -355,6 +357,22 @@ export default function AppLayout() {
     }
   };
 
+  const handleUpdateUser = async (newName) => {
+    try {
+      const response = await updateProfile({ name: newName });
+      if (response.ok) {
+        const data = await response.json();
+        setUser(data.user || data);
+      } else {
+        const err = await response.json();
+        throw new Error(err.message || 'Failed to update name');
+      }
+    } catch (error) {
+      console.error('Failed to update user profile', error);
+      throw error;
+    }
+  };
+
   return (
     <div className={styles.appContainer}>
       <header className={styles.navbar}>
@@ -366,13 +384,13 @@ export default function AppLayout() {
           </div>
         </div>
         <div className={styles.navRight} style={{ position: 'relative', display: 'flex', gap: '16px', alignItems: 'center' }}>
-           <button className={styles.searchNavBtn} onClick={() => setIsSearchOpen(true)} title="Search" id="search-btn">
-             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-           </button>
-           <button className={styles.profileAvatar} onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)} id="avatar-btn">{userInitial}</button>
-           {isProfileMenuOpen && (
-             <ProfileMenu user={user} theme={theme} toggleTheme={toggleTheme} onLogout={handleLogout} onClose={() => setIsProfileMenuOpen(false)} />
-           )}
+          <button className={styles.searchNavBtn} onClick={() => setIsSearchOpen(true)} title="Search" id="search-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          </button>
+          <button className={styles.profileAvatar} onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)} id="avatar-btn">{userInitial}</button>
+          {isProfileMenuOpen && (
+            <ProfileMenu user={user} theme={theme} toggleTheme={toggleTheme} onLogout={handleLogout} onClose={() => setIsProfileMenuOpen(false)} onUpdateUser={handleUpdateUser} />
+          )}
         </div>
       </header>
 
@@ -410,18 +428,18 @@ export default function AppLayout() {
         </main>
       </div>
 
-      <CreateListModal 
-        isOpen={isCreateModalOpen} 
-        onCancel={() => setIsCreateModalOpen(false)} 
-        onCreate={handleCreateList} 
+      <CreateListModal
+        isOpen={isCreateModalOpen}
+        onCancel={() => setIsCreateModalOpen(false)}
+        onCreate={handleCreateList}
       />
-      <SearchSpotlight 
-        isOpen={isSearchOpen} 
-        onClose={() => setIsSearchOpen(false)} 
+      <SearchSpotlight
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
       />
-      <ShortcutCheatSheet 
-        isOpen={isCheatSheetOpen} 
-        onClose={() => setIsCheatSheetOpen(false)} 
+      <ShortcutCheatSheet
+        isOpen={isCheatSheetOpen}
+        onClose={() => setIsCheatSheetOpen(false)}
       />
     </div>
   );

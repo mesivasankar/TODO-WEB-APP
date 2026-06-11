@@ -196,7 +196,7 @@ const DropdownPortal = ({ children, coords, onClose }) => {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [onClose]);
   return ReactDOM.createPortal(
-    <div className={styles.dropdownFixed} style={{ top: coords.top + 8, left: coords.left }} onClick={(e) => e.stopPropagation()}>{children}</div>,
+    <div className={styles.dropdownFixed} style={{ top: coords.top, left: coords.left }} onClick={(e) => e.stopPropagation()}>{children}</div>,
     document.body
   );
 };
@@ -208,7 +208,21 @@ const DatePickerSelector = ({ value, onChange }) => {
   const toggleMenu = () => {
     if (!isOpen && triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
-      setCoords({ top: rect.bottom, left: rect.left });
+      // Calendar is ~290px wide, ~360px tall — smart-position to stay in viewport
+      const calW = 296;
+      const calH = 370;
+      const margin = 12;
+      // Horizontal: prefer opening to the left of the trigger if right-side overflows
+      let left = rect.left;
+      if (left + calW > window.innerWidth - margin) {
+        left = Math.max(margin, rect.right - calW);
+      }
+      // Vertical: prefer opening below, flip above if not enough space below
+      let top = rect.bottom + 6;
+      if (top + calH > window.innerHeight - margin) {
+        top = Math.max(margin, rect.top - calH - 6);
+      }
+      setCoords({ top, left });
     }
     setIsOpen(!isOpen);
   };
@@ -241,7 +255,14 @@ const RecurrenceSelector = ({ value, onChange }) => {
   const toggleMenu = () => {
     if (!isOpen && triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
-      setCoords({ top: rect.bottom, left: rect.left });
+      const menuW = 160;
+      const menuH = 220;
+      const margin = 12;
+      let left = rect.left;
+      if (left + menuW > window.innerWidth - margin) left = Math.max(margin, rect.right - menuW);
+      let top = rect.bottom + 6;
+      if (top + menuH > window.innerHeight - margin) top = Math.max(margin, rect.top - menuH - 6);
+      setCoords({ top, left });
     }
     setIsOpen(!isOpen);
   };
@@ -419,7 +440,7 @@ export default function ListTasksCard({ list, onRenameList, onDeleteList, isSing
   useEffect(() => {
     const handleMovedEvent = (e) => {
       const { task, subtasks, sourceListId, targetListId, targetIndex } = e.detail;
-      
+
       if (list?.id && (list.id === sourceListId || list.id === targetListId)) {
         if (list.id === sourceListId) {
           setTasks(prev => prev.filter(t => {
@@ -428,30 +449,30 @@ export default function ListTasksCard({ list, onRenameList, onDeleteList, isSing
             return !isMainTask && !isSubtask;
           }));
         }
-        
+
         if (list.id === targetListId) {
           setTasks(prev => {
             if (prev.some(t => String(t.id) === String(task.id))) return prev;
-            
+
             const updatedTask = { ...task, list_id: targetListId };
             const updatedSubtasks = subtasks.map(s => ({ ...s, list_id: targetListId }));
-            
+
             const activeTasks = prev.filter(t => !t.is_completed);
             const completedTasks = prev.filter(t => t.is_completed);
-            
+
             let newActive = [...activeTasks];
             if (targetIndex !== null && targetIndex !== undefined && targetIndex >= 0 && targetIndex <= activeTasks.length) {
               newActive.splice(targetIndex, 0, updatedTask);
             } else {
               newActive.push(updatedTask);
             }
-            
+
             return [...newActive, ...updatedSubtasks, ...completedTasks];
           });
         }
       }
     };
-    
+
     window.addEventListener('task-moved-between-lists', handleMovedEvent);
     return () => {
       window.removeEventListener('task-moved-between-lists', handleMovedEvent);
@@ -697,26 +718,26 @@ export default function ListTasksCard({ list, onRenameList, onDeleteList, isSing
 
   async function handleMoveTask(taskId, targetList) {
     if (!list || !targetList || list.id === targetList.id) return;
-    
+
     const taskObj = tasks.find(t => t.id === taskId);
     if (!taskObj) return;
-    
+
     const subtasksToMove = tasks.filter(t => {
       const pid = t.parent_task_id || t.parentTaskId;
       return String(pid) === String(taskId);
     });
-    
+
     setOpenMenuTaskId(null);
     const wasEditing = editingTaskId === taskId;
     if (wasEditing) {
       setEditingTaskId(null);
     }
-    
+
     let finalTitle = (wasEditing ? editTitle.trim() : taskObj.title) || taskObj.title;
     let finalDetails = (wasEditing ? editDetails.trim() : taskObj.description) || taskObj.description;
     let finalDueDate = (wasEditing ? editDueDate : taskObj.due_date) || taskObj.due_date;
     let finalRecurrence = (wasEditing ? editRecurrence : taskObj.recurrence_type) || taskObj.recurrence_type;
-    
+
     const updatedTaskObj = {
       ...taskObj,
       title: finalTitle,
@@ -724,7 +745,7 @@ export default function ListTasksCard({ list, onRenameList, onDeleteList, isSing
       due_date: finalDueDate,
       recurrence_type: finalRecurrence
     };
-    
+
     window.dispatchEvent(new CustomEvent('task-moved-between-lists', {
       detail: {
         task: updatedTaskObj,
@@ -734,7 +755,7 @@ export default function ListTasksCard({ list, onRenameList, onDeleteList, isSing
         targetIndex: null
       }
     }));
-    
+
     showUndoToast(`Task moved to "${targetList.name}"`, async () => {
       window.dispatchEvent(new CustomEvent('task-moved-between-lists', {
         detail: {
@@ -744,7 +765,7 @@ export default function ListTasksCard({ list, onRenameList, onDeleteList, isSing
           targetListId: list.id
         }
       }));
-      
+
       window.isDraggingOrSyncing = true;
       try {
         await updateTask(taskId, {
@@ -762,7 +783,7 @@ export default function ListTasksCard({ list, onRenameList, onDeleteList, isSing
         window.dispatchEvent(new Event('app-data-changed'));
       }
     });
-    
+
     window.isDraggingOrSyncing = true;
     try {
       await updateTask(taskId, {
@@ -773,11 +794,11 @@ export default function ListTasksCard({ list, onRenameList, onDeleteList, isSing
         listId: targetList.id,
         category: targetList.category
       });
-      
+
       const targetListTasks = await getTasksForList(targetList.id);
       const targetActiveTasks = targetListTasks.filter(t => !t.is_completed && t.id !== taskId);
       const newOrderIds = [...targetActiveTasks.map(t => t.id), taskId];
-      
+
       await reorderTasks(targetList.id, newOrderIds);
     } catch (err) {
       console.error("Failed to persist task movement", err);
@@ -959,10 +980,10 @@ export default function ListTasksCard({ list, onRenameList, onDeleteList, isSing
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
               <DatePill value={editDueDate} onClear={() => setEditDueDate("")} forceToday={isTodayMode} isOverdue={isOverdueCheck(editDueDate) && !task.is_completed} />
               <RecurrencePill value={editRecurrence} onClear={() => setEditRecurrence(null)} />
-              
+
               {list && otherLists.length > 0 && (
                 <div className={styles.listSelectorPillContainer}>
-                  <button 
+                  <button
                     className={styles.listSelectorPill}
                     onClick={(e) => {
                       e.preventDefault();
@@ -976,12 +997,12 @@ export default function ListTasksCard({ list, onRenameList, onDeleteList, isSing
                     <span>{list.name}</span>
                     <span className={styles.pillArrow}>▼</span>
                   </button>
-                  
+
                   {editListDropdownOpen && (
                     <div className={styles.listSelectorDropdown}>
                       <div className={styles.listSelectorDropdownHeader}>Move to list</div>
                       {otherLists.map(l => (
-                        <button 
+                        <button
                           key={l.id}
                           className={styles.listSelectorDropdownItem}
                           onClick={(e) => {
@@ -1279,9 +1300,9 @@ export default function ListTasksCard({ list, onRenameList, onDeleteList, isSing
                   </div>
                   <div className={styles.menuSubSection}>
                     {otherLists.map(l => (
-                      <button 
-                        key={l.id} 
-                        className={styles.subMenuItemInline} 
+                      <button
+                        key={l.id}
+                        className={styles.subMenuItemInline}
                         onClick={() => handleMoveTask(openMenuTaskId, l)}
                       >
                         <span style={{ fontSize: '12px', color: 'var(--text-secondary)', marginRight: '4px' }}>•</span>

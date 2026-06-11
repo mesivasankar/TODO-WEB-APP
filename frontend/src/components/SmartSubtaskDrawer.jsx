@@ -22,7 +22,7 @@ const TrashIcon = () => (
 
 const SparklesIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>
+    <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" />
   </svg>
 );
 
@@ -55,7 +55,7 @@ export default function SmartSubtaskDrawer({ isOpen, onClose, task, onApply }) {
   const [editingText, setEditingText] = useState("");
   const [quota, setQuota] = useState({ dailyLimit: 5, dailyRemaining: 5, isProduction: false });
   const { showUndoToast } = useToast();
-  
+
   const drawerRef = useRef(null);
   const listEndRef = useRef(null);
 
@@ -114,7 +114,7 @@ export default function SmartSubtaskDrawer({ isOpen, onClose, task, onApply }) {
   const handleRefine = async (e) => {
     e.preventDefault();
     if (!feedback.trim() || isLoading) return;
-    
+
     setIsLoading(true);
     const instruction = feedback.trim();
     setFeedback("");
@@ -146,7 +146,7 @@ export default function SmartSubtaskDrawer({ isOpen, onClose, task, onApply }) {
   const handleAddCustomStep = (e) => {
     e.preventDefault();
     if (!newStepText.trim()) return;
-    
+
     const newStep = {
       id: self.crypto.randomUUID(),
       title: newStepText.trim(),
@@ -179,7 +179,7 @@ export default function SmartSubtaskDrawer({ isOpen, onClose, task, onApply }) {
       showUndoToast("Please select at least one subtask to import.");
       return;
     }
-    
+
     setIsLoading(true);
     try {
       await onApply(task, selectedSteps);
@@ -197,7 +197,7 @@ export default function SmartSubtaskDrawer({ isOpen, onClose, task, onApply }) {
       {isOpen && (
         <div className={styles.drawerBackdrop}>
           {/* Blurred Background Overlay */}
-          <motion.div 
+          <motion.div
             className={styles.backdropBlur}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -246,8 +246,8 @@ export default function SmartSubtaskDrawer({ isOpen, onClose, task, onApply }) {
                       {steps.map((step, idx) => {
                         const isEditing = editingIndex === idx;
                         return (
-                          <motion.li 
-                            key={step.id} 
+                          <motion.li
+                            key={step.id}
                             className={`${styles.stepItem} ${step.selected ? styles.selectedStep : ""}`}
                             initial={{ opacity: 0, y: 15 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -263,7 +263,7 @@ export default function SmartSubtaskDrawer({ isOpen, onClose, task, onApply }) {
                             {/* Text Input / Label */}
                             <div className={styles.textWrapper}>
                               {isEditing ? (
-                                <input 
+                                <input
                                   autoFocus
                                   className={styles.inlineInput}
                                   value={editingText}
@@ -275,8 +275,8 @@ export default function SmartSubtaskDrawer({ isOpen, onClose, task, onApply }) {
                                   }}
                                 />
                               ) : (
-                                <span 
-                                  className={styles.stepText} 
+                                <span
+                                  className={styles.stepText}
                                   onClick={() => startEditing(idx, step.title)}
                                   title="Click to edit step"
                                 >
@@ -287,8 +287,8 @@ export default function SmartSubtaskDrawer({ isOpen, onClose, task, onApply }) {
 
                             {/* Action Buttons */}
                             <div className={styles.actions}>
-                              <button 
-                                className={styles.iconBtn} 
+                              <button
+                                className={styles.iconBtn}
                                 onClick={() => handleDeleteStep(idx)}
                                 title="Delete step"
                               >
@@ -304,8 +304,8 @@ export default function SmartSubtaskDrawer({ isOpen, onClose, task, onApply }) {
 
                   {/* Inline New Step Form */}
                   <form onSubmit={handleAddCustomStep} className={styles.addCustomForm}>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       className={styles.customStepInput}
                       placeholder="Add custom task step..."
                       value={newStepText}
@@ -323,7 +323,7 @@ export default function SmartSubtaskDrawer({ isOpen, onClose, task, onApply }) {
             <footer className={styles.footer}>
               {/* Feedback Refining Chat Box */}
               <form onSubmit={handleRefine} className={styles.refineForm}>
-                <input 
+                <input
                   type="text"
                   className={styles.refineInput}
                   placeholder='Ask Actdone AI: "Make it more technical", "Add research steps"...'
@@ -340,8 +340,8 @@ export default function SmartSubtaskDrawer({ isOpen, onClose, task, onApply }) {
               <div className={styles.quotaIndicator}>
                 <span className={styles.quotaDot} style={{ backgroundColor: quota.dailyRemaining > 0 ? '#10b981' : '#ef4444' }} />
                 <span className={styles.quotaText}>
-                  {quota.isProduction 
-                    ? `AI Daily Quota: ${quota.dailyRemaining} of ${quota.dailyLimit} remaining` 
+                  {quota.isProduction
+                    ? `AI Daily Quota: ${quota.dailyRemaining} of ${quota.dailyLimit} remaining`
                     : `Daily Quota: Unlimited (Local Dev Mode)`
                   }
                 </span>
@@ -352,9 +352,9 @@ export default function SmartSubtaskDrawer({ isOpen, onClose, task, onApply }) {
                 <button className={styles.cancelBtn} onClick={onClose} disabled={isLoading}>
                   Cancel
                 </button>
-                <button 
-                  className={styles.applyBtn} 
-                  onClick={handleImport} 
+                <button
+                  className={styles.applyBtn}
+                  onClick={handleImport}
                   disabled={isLoading || steps.filter(s => s.selected).length === 0}
                 >
                   {isLoading ? "Importing..." : `Apply ${steps.filter(s => s.selected).length} Steps`}

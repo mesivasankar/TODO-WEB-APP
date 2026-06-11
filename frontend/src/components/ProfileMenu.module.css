@@ -28,7 +28,9 @@
 
 /* Edit Input */
 .editInput { 
-  width: 100%; 
+  flex: 1;
+  min-width: 0;
+  width: auto;
   background: var(--surface-2); 
   border: 1px solid var(--border); 
   border-radius: 6px; 
@@ -43,7 +45,7 @@
 .editButton:hover { opacity: 1; }
 
 /* 🔥 THEMED ACTION BUTTONS */
-.saveActions { display: flex; gap: 6px; }
+.saveActions { display: flex; gap: 6px; flex-shrink: 0; }
 
 .actionBtn { 
   width: 28px; height: 28px; 

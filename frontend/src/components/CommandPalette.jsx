@@ -25,16 +25,16 @@ export default function CommandPalette() {
   // 2. Handle Search
   useEffect(() => {
     if (!query) {
-        setResults([]);
-        return;
+      setResults([]);
+      return;
     }
     const timer = setTimeout(async () => {
-        try {
-            const data = await searchTasks(query);
-            setResults(data.tasks || []);
-        } catch (err) {
-            console.error(err);
-        }
+      try {
+        const data = await searchTasks(query);
+        setResults(data.tasks || []);
+      } catch (err) {
+        console.error(err);
+      }
     }, 300);
     return () => clearTimeout(timer);
   }, [query]);
@@ -51,7 +51,7 @@ export default function CommandPalette() {
     <div className={styles.overlay} onClick={() => setOpen(false)}>
       <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: '640px' }}>
         <Command className={styles.container} shouldFilter={false} loop>
-          <Command.Input 
+          <Command.Input
             className={styles.input}
             placeholder="Type to search tasks..."
             value={query}
@@ -63,39 +63,39 @@ export default function CommandPalette() {
             {/* Quick Actions (Only shown when NOT searching) */}
             {!query && (
               <Command.Group heading="Actions" className={styles.group}>
-                 <div className={styles.groupHeading}>Navigation</div>
-                 
-                 <Command.Item className={styles.item} onSelect={() => run(() => navigate('/app/all'))}>
-                   <span>Go to All Tasks</span>
-                 </Command.Item>
-                 
-                 {/* 🔥 ADDED: Missing Navigation Options */}
-                 <Command.Item className={styles.item} onSelect={() => run(() => navigate('/app/today'))}>
-                   <span>Go to Today</span>
-                 </Command.Item>
+                <div className={styles.groupHeading}>Navigation</div>
 
-                 <Command.Item className={styles.item} onSelect={() => run(() => navigate('/app/upcoming'))}>
-                   <span>Go to Upcoming</span>
-                 </Command.Item>
+                <Command.Item className={styles.item} onSelect={() => run(() => navigate('/app/all'))}>
+                  <span>Go to All Tasks</span>
+                </Command.Item>
 
-                 <Command.Item className={styles.item} onSelect={() => run(() => navigate('/app/starred'))}>
-                   <span>Go to Starred</span>
-                 </Command.Item>
+                {/* 🔥 ADDED: Missing Navigation Options */}
+                <Command.Item className={styles.item} onSelect={() => run(() => navigate('/app/today'))}>
+                  <span>Go to Today</span>
+                </Command.Item>
 
-                 <Command.Item className={styles.item} onSelect={() => run(() => navigate('/app/analytics'))}>
-                   <span>View Analytics</span>
-                 </Command.Item>
+                <Command.Item className={styles.item} onSelect={() => run(() => navigate('/app/upcoming'))}>
+                  <span>Go to Upcoming</span>
+                </Command.Item>
+
+                <Command.Item className={styles.item} onSelect={() => run(() => navigate('/app/starred'))}>
+                  <span>Go to Starred</span>
+                </Command.Item>
+
+                <Command.Item className={styles.item} onSelect={() => run(() => navigate('/app/analytics'))}>
+                  <span>View Analytics</span>
+                </Command.Item>
               </Command.Group>
             )}
 
             {/* Search Results */}
             {results.length > 0 && (
-                <div className={styles.groupHeading}>Results</div>
+              <div className={styles.groupHeading}>Results</div>
             )}
-            
+
             {results.map((task) => (
-              <Command.Item 
-                key={task.id} 
+              <Command.Item
+                key={task.id}
                 className={styles.item}
                 onSelect={() => run(() => navigate(`/app/list/${task.list_id}`))}
               >
@@ -105,7 +105,7 @@ export default function CommandPalette() {
             ))}
 
             {query && results.length === 0 && (
-                <div style={{ padding: '12px', color: 'var(--text-secondary)' }}>No results found.</div>
+              <div style={{ padding: '12px', color: 'var(--text-secondary)' }}>No results found.</div>
             )}
           </Command.List>
         </Command>

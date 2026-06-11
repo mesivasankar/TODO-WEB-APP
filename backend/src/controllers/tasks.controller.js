@@ -299,3 +299,34 @@ export async function getAnalytics(req, res, next) {
       return next(err); 
   }
 }
+
+export async function getHistoryTasks(req, res, next) {
+  try {
+    const userId = req.user.id;
+    const { date } = req.query; // optional 'YYYY-MM-DD'
+    
+    let query = `
+      SELECT t.*, tl.name as list_name 
+      FROM tasks t
+      LEFT JOIN task_lists tl ON t.list_id = tl.id
+      WHERE t.user_id = $1 
+        AND t.due_date >= CURRENT_DATE - INTERVAL '365 days'
+        AND t.due_date <= CURRENT_DATE
+        AND t.deleted_at IS NULL
+    `;
+    const params = [userId];
+    
+    if (date) {
+      query += ` AND t.due_date = $2`;
+      params.push(date);
+    }
+    
+    query += ` ORDER BY t.due_date DESC, t.created_at DESC`;
+    
+    const { rows } = await pool.query(query, params);
+    return res.json({ tasks: serializeTasks(rows) });
+  } catch (err) { 
+    console.error("Error in getHistoryTasks:", err);
+    return next(err); 
+  }
+}

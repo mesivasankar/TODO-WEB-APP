@@ -138,6 +138,13 @@ export async function getAnalytics() {
   return response.json();
 }
 
+export async function getTasksHistory(date) {
+  const url = date ? `/api/tasks/history?date=${encodeURIComponent(date)}` : `/api/tasks/history`;
+  const response = await apiRequest(url);
+  const data = await response.json();
+  return data.tasks;
+}
+
 export async function getDailyBriefing() {
   const response = await apiRequest(`/api/ai/briefing`);
   return response.json();

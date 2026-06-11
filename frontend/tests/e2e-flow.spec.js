@@ -5,7 +5,7 @@ import { test, expect } from '@playwright/test';
  * This script verifies the app using your real local credentials.
  */
 
-const APP_URL = 'http://localhost:5173';
+const APP_URL = 'http://localhost:5174';
 const EMAIL = 'sivacr1312@gmail.com';
 const PASSWORD = 'Test@1234';
 
@@ -87,16 +87,16 @@ test.describe('Actdone Full Flow', () => {
     await page.click('#avatar-btn');
     await page.waitForTimeout(500);
     await page.click('text=View Analytics');
-    await expect(page.locator('text=Task Analytics')).toBeVisible();
-    await page.click('button:has-text("Close")');
+    await expect(page.locator('text=Productivity')).toBeVisible();
+    await page.click('button:has-text("Back")');
 
     // 5. Test Theme Toggle
     await page.click('#avatar-btn');
     await page.waitForTimeout(500);
-    const isDark = await page.evaluate(() => document.documentElement.getAttribute('data-theme') === 'dark');
+    const isDark = await page.evaluate(() => document.body.getAttribute('data-theme') === 'dark');
     await page.click(isDark ? 'text=☀ Light' : 'text=☾ Dark');
 
-    const newTheme = await page.evaluate(() => document.documentElement.getAttribute('data-theme'));
+    const newTheme = await page.evaluate(() => document.body.getAttribute('data-theme'));
     expect(newTheme).toBe(isDark ? 'light' : 'dark');
   });
 
@@ -111,7 +111,7 @@ test.describe('Actdone Full Flow', () => {
 
     // Test Search Spotlight
     await page.click('#search-btn');
-    const searchInput = page.locator('input[placeholder="Search tasks or lists..."]');
+    const searchInput = page.locator('input[placeholder="Search tasks..."]');
     await expect(searchInput).toBeVisible({ timeout: 10000 });
 
     await searchInput.fill('Master Task');
@@ -123,6 +123,38 @@ test.describe('Actdone Full Flow', () => {
     await page.fill('input[placeholder="Email"]', 'invalid-user');
     await page.click('button:has-text("Log in")');
     await expect(page.locator('text=Please enter a valid email address.')).toBeVisible();
+  });
+
+  test('History Page Filter and Sync', async ({ page }) => {
+    // 1. Login
+    await page.goto(`${APP_URL}/login`);
+    await page.fill('input[placeholder="Email"]', EMAIL);
+    await page.fill('input[placeholder="Password"]', PASSWORD);
+    await page.click('button:has-text("Log in")');
+    await expect(page).toHaveURL(/.*app/);
+
+    // 2. Navigate to History Page
+    await page.click('text=History');
+    await expect(page).toHaveURL(/.*history/);
+
+    // 3. Verify columns and date picker dropdown button exists
+    await expect(page.locator('h2:has-text("Completed Tasks")')).toBeVisible();
+    await expect(page.locator('h2:has-text("Incomplete Tasks")')).toBeVisible();
+
+    // 4. Click Completed Column Date Picker Trigger
+    const datePickerBtn = page.locator('button', { hasText: 'Last 365 Days' }).first();
+    await expect(datePickerBtn).toBeVisible();
+    await datePickerBtn.click();
+
+    // 5. Verify presets are listed
+    await expect(page.locator('button:has-text("Yesterday")')).toBeVisible();
+    await expect(page.locator('button:has-text("Last 7 Days")')).toBeVisible();
+    await expect(page.locator('button:has-text("Select Specific Date")')).toBeVisible();
+    await expect(page.locator('button:has-text("Select Date Range")')).toBeVisible();
+
+    // Click "Yesterday" preset
+    await page.click('button:has-text("Yesterday")');
+    await expect(page.locator('button', { hasText: 'Yesterday' }).first()).toBeVisible();
   });
 
 });

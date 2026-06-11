@@ -16,6 +16,7 @@ import OverdueTasksPage from "./pages/OverdueTasksPage"; // 🔥 ADD THIS
 import UpcomingTasksPage from "./pages/UpcomingTasksPage";
 import PriorityMatrix from "./components/PriorityMatrix/PriorityMatrix";
 import StatsDashboard from "./components/StatsDashboard";
+import HistoryTasksPage from "./pages/HistoryTasksPage";
 
 import "./styles/global.css";
 
@@ -74,6 +75,7 @@ export default function App() {
             <Route path="list/:listId" element={<ListTasksPage />} />
             <Route path="starred" element={<StarredTasksPage />} />
             <Route path="/app/matrix" element={<PriorityMatrix />} />
+            <Route path="history" element={<HistoryTasksPage />} />
             <Route path="analytics" element={<AnalyticsModal />} />
           </Route>
 
